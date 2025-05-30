@@ -2,10 +2,19 @@
 
 import { useState, useEffect } from "react";
 import Calendar from "@/components/Calendario";
-import { Conferencia } from "@/types/components";
+import { Conferencia, DisponibilidadHorario } from "@/types/components";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import { useRouter } from "next/navigation";
+
+// Utilizamos la interfaz DisponibilidadHorario importada desde @/types/components
 
 export default function CalendarioPage() {
+  const router = useRouter();
   const [conferencias, setConferencias] = useState<Conferencia[]>([]);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [disponibilidad, setDisponibilidad] = useState<DisponibilidadHorario[]>([]);
+  const [loading, setLoading] = useState(false);
   
   // Fetch de ejemplo para las conferencias
   useEffect(() => {
@@ -61,9 +70,27 @@ export default function CalendarioPage() {
     setConferencias(conferenciasSimuladas);
   }, []);
 
+  // Manejar la seleccion de un dia y mostrar disponibilidad
+  const handleDaySelect = (date: Date, disponibilidadHorarios: DisponibilidadHorario[]) => {
+    setSelectedDate(date);
+    setDisponibilidad(disponibilidadHorarios);
+  };
+
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950">
-      <Calendar conferencias={conferencias} />
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2">Calendario de Reservaciones</h1>
+          <p className="text-gray-600 dark:text-gray-400">
+            Selecciona un día en el calendario para ver los horarios disponibles y reservar una sala.
+          </p>
+        </div>
+        
+        <Calendar 
+          conferencias={conferencias} 
+          onDaySelect={handleDaySelect} 
+        />
+      </div>
     </div>
   );
 }

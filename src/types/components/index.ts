@@ -36,6 +36,15 @@ export interface Conferencia {
   estado?: 'programada' | 'en curso' | 'finalizada' | 'cancelada';
 }
 
+// Tipo para la disponibilidad de horarios en el calendario
+export interface DisponibilidadHorario {
+  horaInicio: string; // formato HH:MM
+  horaFin: string;    // formato HH:MM
+  disponible: boolean;
+  salaId?: string;
+  nombreSala?: string;
+}
+
 export default function ReservationForm({ availableRooms, currentUser, onSubmit, initialData }: ReservationFormProps) {
   // Implementación del componente
 }
