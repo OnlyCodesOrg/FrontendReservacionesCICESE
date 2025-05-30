@@ -15,6 +15,8 @@ export interface ReservationFormData {
   endTime: Date;
   attendees?: number;
   requiredEquipment: string[];
+  requesterId: string; 
+  requesterName: string; 
 }
 
 // Tipo para las conferencias que recibe el componente

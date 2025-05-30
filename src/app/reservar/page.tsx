@@ -22,7 +22,9 @@ export default function ReservarPage() {
     startTime: new Date(),
     endTime: new Date(),
     attendees: 1,
-    requiredEquipment: []
+    requiredEquipment: [],
+    requesterId: "",
+    requesterName: ""
   });
   
   // Conferencias existentes (reservas)
@@ -39,6 +41,41 @@ export default function ReservarPage() {
     { id: "pizarra", name: "Pizarra Inteligente" },
     { id: "computadoras", name: "Computadoras" }
   ]);
+  
+  // Directorio institucional simulado
+  const [directorioInstitucional, setDirectorioInstitucional] = useState<User[]>([
+    {
+      id: "user1",
+      name: "Usuario de Prueba",
+      email: "usuario@cicese.edu.mx",
+      role: "user",
+      department: "Oceanografía"
+    },
+    {
+      id: "user2",
+      name: "Ana Rodríguez",
+      email: "arodriguez@cicese.edu.mx",
+      role: "user",
+      department: "Física"
+    },
+    {
+      id: "user3",
+      name: "Carlos Mendoza",
+      email: "cmendoza@cicese.edu.mx",
+      role: "user",
+      department: "Biología"
+    },
+    {
+      id: "user4",
+      name: "Laura Sánchez",
+      email: "lsanchez@cicese.edu.mx",
+      role: "admin",
+      department: "Administración"
+    }
+  ]);
+  
+  // Estado para controlar si se muestra el directorio
+  const [mostrarDirectorio, setMostrarDirectorio] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
@@ -169,13 +206,22 @@ export default function ReservarPage() {
     setSalas(salasDisponibles);
     
     // Simulación de usuario actual
-    setUsuario({
+    const usuarioActual: User = {
       id: "user1",
       name: "Usuario de Prueba",
       email: "usuario@cicese.edu.mx",
       role: "user",
       department: "Oceanografía"
-    });
+    };
+    
+    setUsuario(usuarioActual);
+    
+    // Establecer el usuario actual como solicitante por defecto
+    setFormData(prev => ({
+      ...prev,
+      requesterId: usuarioActual.id,
+      requesterName: usuarioActual.name
+    }));
   }, [searchParams]);
 
   // Función para verificar si una hora está disponible (no hay solapamiento con conferencias existentes)
@@ -295,6 +341,18 @@ export default function ReservarPage() {
       }
     });
   };
+  
+  // Manejar la selección de un usuario desde el directorio institucional
+  const handleSeleccionUsuario = (usuarioSeleccionado: User) => {
+    setFormData(prev => ({
+      ...prev,
+      requesterId: usuarioSeleccionado.id,
+      requesterName: usuarioSeleccionado.name
+    }));
+    
+    // Ocultar el directorio después de seleccionar
+    setMostrarDirectorio(false);
+  };
 
   // Enviar formulario
   const handleSubmit = async (e: React.FormEvent) => {
@@ -304,7 +362,7 @@ export default function ReservarPage() {
     
     try {
       // Validar datos
-      if (!formData.title || !formData.roomId || !formData.startTime || !formData.endTime) {
+      if (!formData.title || !formData.roomId || !formData.startTime || !formData.endTime || !formData.requesterName) {
         throw new Error("Por favor completa todos los campos obligatorios");
       }
       
@@ -401,6 +459,56 @@ export default function ReservarPage() {
                   ))}
                 </select>
               </div>
+            </div>
+            
+            {/* Campo para el solicitante */}
+            <div className="mb-6">
+              <label htmlFor="requesterName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Solicitante *
+              </label>
+              <div className="flex space-x-2">
+                <input
+                  type="text"
+                  id="requesterName"
+                  name="requesterName"
+                  value={formData.requesterName}
+                  onChange={handleChange}
+                  placeholder="Nombre completo del solicitante"
+                  className="flex-grow px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setMostrarDirectorio(!mostrarDirectorio)}
+                  className="px-4 py-2 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 rounded-md hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors flex items-center"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                  Directorio
+                </button>
+              </div>
+              
+              {/* Directorio institucional */}
+              {mostrarDirectorio && (
+                <div className="mt-2 p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 shadow-md max-h-60 overflow-y-auto">
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Seleccionar del directorio institucional:</h4>
+                  <ul className="divide-y divide-gray-200 dark:divide-gray-700">
+                    {directorioInstitucional.map(usuario => (
+                      <li key={usuario.id} className="py-2">
+                        <button
+                          type="button"
+                          onClick={() => handleSeleccionUsuario(usuario)}
+                          className="w-full text-left px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
+                        >
+                          <div className="font-medium text-gray-800 dark:text-gray-200">{usuario.name}</div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">{usuario.email} - {usuario.department}</div>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
             
             <div className="mb-6">
