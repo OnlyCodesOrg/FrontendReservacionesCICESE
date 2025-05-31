@@ -13,6 +13,7 @@ interface CalendarProps {
 export default function Calendar({ conferencias }: CalendarProps) {
   const router = useRouter();
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [hoveredDay, setHoveredDay] = useState<string | null>(null);
 
   // Funciones para navegar entre meses
   const nextMonth = () => setCurrentDate(addMonths(currentDate, 1));
@@ -32,8 +33,15 @@ export default function Calendar({ conferencias }: CalendarProps) {
   };
 
   // Función para navegar a la página de detalles
-  const handleConferenciaClick = (id: string) => {
+  const handleConferenciaClick = (id: string, event: React.MouseEvent) => {
+    event.stopPropagation(); // Evitar que se active el click del día
     router.push(`/conferencia/${id}`);
+  };
+
+  // Función para navegar a la página de reservación
+  const handleDayClick = (day: Date) => {
+    const dateString = format(day, "yyyy-MM-dd");
+    router.push(`/solicitud-reservacion?fecha=${dateString}`);
   };
 
   return (
@@ -78,19 +86,33 @@ export default function Calendar({ conferencias }: CalendarProps) {
 
         {days.map((day) => {
           const conferenciasDelDia = getConferenciasByDay(day);
+          const dayKey = day.toString();
+          const isHovered = hoveredDay === dayKey;
           
           return (
             <div
-              key={day.toString()}
-              className={`min-h-[120px] border border-gray-200 dark:border-gray-700 p-1 ${
+              key={dayKey}
+              onClick={() => handleDayClick(day)}
+              onMouseEnter={() => setHoveredDay(dayKey)}
+              onMouseLeave={() => setHoveredDay(null)}
+              className={`relative min-h-[120px] border border-gray-200 dark:border-gray-700 p-1 cursor-pointer transition-all duration-200 ${
                 isSameMonth(day, currentDate)
-                  ? "bg-white dark:bg-gray-800"
-                  : "bg-gray-50 dark:bg-gray-900 text-gray-400"
-              }`}
+                  ? "bg-white dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                  : "bg-gray-50 dark:bg-gray-900 text-gray-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+              } ${isHovered ? "border-blue-300 dark:border-blue-600" : ""}`}
             >
               <div className="font-medium mb-1">{format(day, "d")}</div>
               
-              <div className="space-y-1">
+              {/* Overlay para mostrar "Agendar Reservación" */}
+              {isHovered && (
+                <div className="absolute inset-0 bg-blue-500/10 dark:bg-blue-400/10 flex items-center justify-center rounded z-20">
+                  <span className="text-blue-600 dark:text-blue-400 font-medium text-sm">
+                    Agendar Reservación
+                  </span>
+                </div>
+              )}
+              
+              <div className="space-y-1 relative z-10">
                 {conferenciasDelDia.map((conf) => {
                   const inicio = parseISO(conf.fechaInicio);
                   const fin = parseISO(conf.fechaFin);
@@ -98,8 +120,8 @@ export default function Calendar({ conferencias }: CalendarProps) {
                   return (
                     <div
                       key={conf.id}
-                      onClick={() => handleConferenciaClick(conf.id)}
-                      className={`${conf.color} text-white text-xs p-1 rounded truncate cursor-pointer hover:opacity-90 transition-transform hover:scale-105`}
+                      onClick={(e) => handleConferenciaClick(conf.id, e)}
+                      className={`${conf.color} text-white text-xs p-1 rounded truncate cursor-pointer hover:opacity-90 transition-transform hover:scale-105 relative z-30`}
                       title={`${conf.titulo} - ${conf.nombreSala}`}
                     >
                       <div className="font-medium">{conf.titulo}</div>
