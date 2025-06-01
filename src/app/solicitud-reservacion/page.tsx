@@ -98,6 +98,9 @@ function SolicitudReservacionContent() {
     4: false
   });
 
+  // Estado para almacenar el ID de la reservación creada
+  const [reservacionId, setReservacionId] = useState<number | null>(null);
+
   const handleInputChange = (field: keyof FormData, value: any) => {
     setFormData(prev => ({
       ...prev,
@@ -181,65 +184,152 @@ function SolicitudReservacionContent() {
   // Funciones para guardar cada sección
   const saveSection = async (sectionNumber: number) => {
     try {
-      // TODO: Implementar cuando estén los endpoints
-      /*
-      let endpoint = '';
-      let data = {};
-      
-      switch(sectionNumber) {
-        case 1:
-          endpoint = '/api/solicitud/datos-solicitante';
-          data = {
-            nombreCompleto: formData.nombreCompleto,
-            correo: formData.correo,
-            departamento: formData.departamento
-          };
-          break;
-        case 2:
-          endpoint = '/api/solicitud/detalles-evento';
-          data = {
-            nombreEvento: formData.nombreEvento,
-            tipoEvento: formData.tipoEvento,
-            fechaEvento: formData.fechaEvento,
-            esRecurrente: formData.esRecurrente,
-            horaInicio: formData.horaInicio,
-            horaFinalizacion: formData.horaFinalizacion,
-            numeroParticipantes: formData.numeroParticipantes
-          };
-          break;
-        case 3:
-          endpoint = '/api/solicitud/recursos';
-          data = {
-            equipoRequerido: formData.equipoRequerido,
-            serviciosRequeridos: formData.serviciosRequeridos
-          };
-          break;
-        case 4:
-          endpoint = '/api/solicitud/participantes';
-          data = {
-            participantes: formData.participantes
-          };
-          break;
-      }
-      
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-      
-      if (response.ok) {
+      if (sectionNumber === 1) {
+        // TODO: Implementar endpoint para datos del solicitante cuando esté disponible
+        /*
+        const endpoint = '/api/solicitud/datos-solicitante';
+        const data = {
+          nombreCompleto: formData.nombreCompleto,
+          correo: formData.correo,
+          departamento: formData.departamento
+        };
+        
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
+        });
+        
+        if (!response.ok) {
+          throw new Error('Error al guardar datos del solicitante');
+        }
+        */
+        
+        // Simulación temporal
         setSavedSections(prev => ({ ...prev, [sectionNumber]: true }));
+        console.log('Sección 1 guardada (simulado):', {
+          nombreCompleto: formData.nombreCompleto,
+          correo: formData.correo,
+          departamento: formData.departamento
+        });
+
+      } else if (sectionNumber === 2) {
+        // Crear la reservación usando el endpoint real
+        const endpoint = 'https://reservaciones-cicese-app.ambitioussea-007d0918.westus3.azurecontainerapps.io/reservaciones/crear';
+        
+        // Preparar el equipo seleccionado
+        const equipoSeleccionado = Object.entries(formData.equipoRequerido)
+          .filter(([_, selected]) => selected)
+          .map(([item, _]) => {
+            // Mapear nombres del frontend a nombres del backend
+            const equipoMap: { [key: string]: string } = {
+              'proyector': 'Proyector',
+              'camara': 'Webcam',
+              'tableta': 'Tableta',
+              'proyectorPortatil': 'Proyector Portátil',
+              'microfono': 'Microfonos',
+              'wifi': 'WiFi'
+            };
+            return equipoMap[item] || item;
+          });
+
+        // Preparar observaciones con servicios seleccionados
+        const serviciosSeleccionados = Object.entries(formData.serviciosRequeridos)
+          .filter(([_, selected]) => selected)
+          .map(([item, _]) => item)
+          .join(', ');
+        
+        const observaciones = serviciosSeleccionados ? `Servicios requeridos: ${serviciosSeleccionados}` : '';
+
+        const reservacionData = {
+          sala: "Por asignar", // TODO: Implementar selección de sala
+          tipoEvento: formData.tipoEvento,
+          fechaEvento: formData.fechaEvento,
+          horaInicio: formData.horaInicio,
+          horaFin: formData.horaFinalizacion,
+          asistentes: parseInt(formData.numeroParticipantes.split('-')[0]) || 0, // Tomar el primer número del rango
+          equipo: equipoSeleccionado,
+          observaciones: observaciones
+        };
+
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(reservacionData),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Error al crear reservación: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        
+        // Guardar el ID de la reservación para usar en participantes
+        if (result.id) {
+          setReservacionId(result.id);
+        }
+        
+        setSavedSections(prev => ({ ...prev, [sectionNumber]: true }));
+        console.log('Reservación creada exitosamente:', result);
+
+      } else if (sectionNumber === 3) {
+        // Los recursos ya se envían en la sección 2, solo marcar como guardado
+        setSavedSections(prev => ({ ...prev, [sectionNumber]: true }));
+        console.log('Sección 3 marcada como guardada (recursos incluidos en reservación)');
+
+      } else if (sectionNumber === 4) {
+        // Endpoint real para participantes
+        const endpoint = 'https://reservaciones-cicese-app.ambitioussea-007d0918.westus3.azurecontainerapps.io/participantes-ad/agregarParticipante';
+        
+        // Filtrar participantes que tengan nombre
+        const participantesValidos = formData.participantes.filter(p => p.nombre.trim() !== '');
+        
+        if (participantesValidos.length === 0) {
+          console.log('No hay participantes válidos para guardar');
+          setSavedSections(prev => ({ ...prev, [sectionNumber]: true }));
+          return;
+        }
+
+        // Usar el ID de la reservación creada o uno temporal
+        const idReservacion = reservacionId || 32; // Fallback temporal
+
+        // Enviar cada participante por separado
+        const promises = participantesValidos.map(async (participante) => {
+          const participanteData = {
+            reservacionId: idReservacion,
+            nombre: participante.nombre,
+            email: participante.correo
+          };
+
+          const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(participanteData),
+          });
+
+          if (!response.ok) {
+            throw new Error(`Error al guardar participante ${participante.nombre}: ${response.statusText}`);
+          }
+
+          return response.json();
+        });
+
+        // Esperar a que todos los participantes se guarden
+        await Promise.all(promises);
+        
+        setSavedSections(prev => ({ ...prev, [sectionNumber]: true }));
+        console.log(`Participantes guardados exitosamente: ${participantesValidos.length} participantes`);
       }
-      */
-      
-      // Simulación temporal
-      setSavedSections(prev => ({ ...prev, [sectionNumber]: true }));
-      console.log(`Sección ${sectionNumber} guardada:`, formData);
     } catch (error) {
       console.error(`Error guardando sección ${sectionNumber}:`, error);
+      // Mostrar error al usuario
+      alert(`Error al guardar la sección ${sectionNumber}. Por favor, inténtalo de nuevo.`);
     }
   };
 
@@ -341,10 +431,11 @@ function SolicitudReservacionContent() {
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                   >
                     <option value="">Seleccionar</option>
-                    <option value="conferencia">Conferencia</option>
-                    <option value="reunion">Reunión</option>
-                    <option value="seminario">Seminario</option>
-                    <option value="taller">Taller</option>
+                    <option value="Conferencia">Conferencia</option>
+                    <option value="Reunion">Reunión</option>
+                    <option value="Seminario">Seminario</option>
+                    <option value="Taller">Taller</option>
+                    <option value="Junta rutinaria">Junta rutinaria</option>
                   </select>
                 </div>
                 
@@ -423,7 +514,7 @@ function SolicitudReservacionContent() {
                   onClick={() => saveSection(2)}
                   className="px-6 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-800 transition-colors"
                 >
-                  Guardar
+                  Crear Reservación
                 </button>
               </div>
             </div>
@@ -433,6 +524,10 @@ function SolicitudReservacionContent() {
               <h2 className="text-xl font-semibold mb-6 text-blue-900 dark:text-blue-100">
                 3. Recursos Necesarios
               </h2>
+              
+              <div className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                <p>💡 Los recursos se incluyen automáticamente al crear la reservación en la sección anterior.</p>
+              </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
@@ -496,9 +591,10 @@ function SolicitudReservacionContent() {
               <div className="flex justify-end mt-6">
                 <button 
                   onClick={() => saveSection(3)}
-                  className="px-6 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-800 transition-colors"
+                  className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                  disabled={!savedSections[2]}
                 >
-                  Guardar
+                  Confirmar Recursos
                 </button>
               </div>
             </div>
@@ -569,7 +665,7 @@ function SolicitudReservacionContent() {
                     onClick={() => saveSection(4)}
                     className="px-6 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-800 transition-colors"
                   >
-                    Siguiente
+                    Guardar
                   </button>
                 </div>
               </div>
