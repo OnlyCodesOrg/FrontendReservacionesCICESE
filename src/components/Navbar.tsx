@@ -42,6 +42,7 @@ export default function Navbar() {
         }
         const data = await res.json();
         setUser(data.user);
+        
       })
       .catch(() => {
         localStorage.removeItem("access_token");

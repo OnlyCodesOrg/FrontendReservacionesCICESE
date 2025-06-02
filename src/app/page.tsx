@@ -20,7 +20,7 @@ export default function Home() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link
-                  href="/reservas/nueva"
+                  href="solicitud-reservacion"
                   className="rounded-md bg-blue-600 px-6 py-3 text-base font-medium text-white hover:bg-blue-700 text-center"
                 >
                   Nueva Reserva

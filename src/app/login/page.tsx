@@ -61,6 +61,7 @@ export default function LoginPage() {
       // Decidir a dónde redirigir; por simplicidad, a /dashboard
       // Si deseas redirigir según rol, debes decodificar el JWT y leer idRol
       router.push("/dashboard");
+      
     } catch (error) {
       console.error("Error al hacer login:", error);
       setErrorMessage("No se pudo conectar con el servidor. Intenta más tarde.");
