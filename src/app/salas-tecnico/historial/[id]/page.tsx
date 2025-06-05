@@ -14,7 +14,11 @@ import {
   DownloadIcon,
   SearchIcon,
   FilterIcon,
+  EyeIcon,
 } from "lucide-react";
+
+// Importar el hook del generador de PDF
+import { usePDFGenerator } from "../../../../components/pdf-reporte-eventos";
 
 // Interfaces
 interface HistorialUsoSala {
@@ -89,6 +93,12 @@ export default function HistorialSalaPage() {
       setLoading(true);
       setError(null);
 
+      console.log("🔍 Obteniendo historial para sala ID:", salaId);
+      console.log(
+        "🌐 URL completa:",
+        `${API_BASE_URL}/salas/historial/${salaId}?limite=${limite}&offset=${offset}`
+      );
+
       const response = await fetch(
         `${API_BASE_URL}/salas/historial/${salaId}?limite=${limite}&offset=${offset}`,
         {
@@ -99,19 +109,34 @@ export default function HistorialSalaPage() {
         }
       );
 
+      console.log(
+        "📡 Respuesta del servidor:",
+        response.status,
+        response.statusText
+      );
+
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error("❌ Error response body:", errorText);
         throw new Error(`Error ${response.status}: ${response.statusText}`);
       }
 
       const data: HistorialResponse = await response.json();
+      console.log("📊 Datos recibidos del backend:", data);
 
       if (data.success) {
+        console.log(
+          "✅ Historial obtenido exitosamente:",
+          data.data.length,
+          "eventos"
+        );
         setHistorial(data.data);
       } else {
+        console.error("❌ Backend respondió con error:", data.message);
         setError(data.message || "Error al obtener el historial");
       }
     } catch (err) {
-      console.error("Error al obtener historial:", err);
+      console.error("💥 Error al obtener historial:", err);
       setError(
         err instanceof Error
           ? err.message
@@ -182,15 +207,41 @@ export default function HistorialSalaPage() {
     setHistorialFiltrado(eventosFiltrados);
   };
 
+  const convertirHoraAMinutos = (hora: any): number => {
+    try {
+      if (hora instanceof Date) {
+        return hora.getHours() * 60 + hora.getMinutes();
+      }
+      
+      if (typeof hora === 'string') {
+        if (hora.includes('T')) {
+          const date = new Date(hora);
+          return date.getHours() * 60 + date.getMinutes();
+        }
+        
+        if (hora.includes(':')) {
+          const [horas, minutos] = hora.split(':').map(Number);
+          return horas * 60 + (minutos || 0);
+        }
+      }
+      
+      throw new Error('Formato de hora no reconocido');
+    } catch (error) {
+      console.warn('Error convirtiendo hora a minutos:', hora, error);
+      return 0;
+    }
+  };
+
   // Cálculos de estadísticas
   const calcularEstadisticas = () => {
     const totalEventos = historial.length;
 
     const horasDeUso = historial.reduce((total, evento) => {
-      const inicio = new Date(`1970-01-01T${evento.horaInicio}`);
-      const fin = new Date(`1970-01-01T${evento.horaFin}`);
-      const diferencia = (fin.getTime() - inicio.getTime()) / (1000 * 60 * 60);
-      return total + diferencia;
+      const minutosInicio = convertirHoraAMinutos(evento.horaInicio);
+      const minutosFin = convertirHoraAMinutos(evento.horaFin);
+      
+      const diferencia = (minutosFin - minutosInicio) / 60;
+      return total + Math.max(0, diferencia);
     }, 0);
 
     const fallasRegistradas = historial.filter(
@@ -204,10 +255,12 @@ export default function HistorialSalaPage() {
     };
   };
 
+  // Hook para el generador de PDF
+  const { generarReporte } = usePDFGenerator(sala, historial);
+
+  // Reemplazar la función exportarReporte existente
   const exportarReporte = () => {
-    // Implementar lógica de exportación
-    console.log("Exportando reporte...");
-    // Aquí podrías generar un CSV, PDF, etc.
+    generarReporte();
   };
 
   const formatearFecha = (fechaISO: string) => {
@@ -243,6 +296,29 @@ export default function HistorialSalaPage() {
       colores[tipo as keyof typeof colores] ||
       "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200"
     );
+  };
+
+  // Función para obtener el rango de asistentes
+  const obtenerRangoAsistentes = (numeroAsistentes: number | null): string => {
+    if (!numeroAsistentes) return "No registrado";
+
+    if (numeroAsistentes <= 9) return "1-9";
+    if (numeroAsistentes <= 19) return "10-19";
+    if (numeroAsistentes <= 29) return "20-29";
+    if (numeroAsistentes <= 49) return "30-49";
+    if (numeroAsistentes <= 99) return "50-99";
+    return "100+";
+  };
+
+  // Función para determinar si el evento fue completado (basado en la fecha)
+  const esEventoCompletado = (fechaEvento: string): boolean => {
+    return new Date(fechaEvento) < new Date();
+  };
+
+  const verDetallesEvento = (eventoId: number) => {
+    console.log("Ver detalles del evento:", eventoId);
+    // Aquí puedes implementar la navegación a la página de detalles
+    // router.push(`/eventos/${eventoId}/detalles`);
   };
 
   if (loading) {
@@ -314,7 +390,7 @@ export default function HistorialSalaPage() {
             </div>
           </div>
 
-          {/* Botón de exportar */}
+          {/* Botón de exportar - ahora usa el componente PDF */}
           <button
             onClick={exportarReporte}
             className="flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
@@ -480,13 +556,39 @@ export default function HistorialSalaPage() {
             historialFiltrado.map((evento) => (
               <div
                 key={evento.id}
-                className="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow"
+                className="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow relative"
               >
                 <div className="p-6">
+                  {/* Etiquetas en esquina superior derecha */}
+                  <div className="absolute top-4 right-4 space-y-2">
+                    {/* Etiqueta de fallas */}
+                    <span
+                      className={`mr-2 px-2 py-1 text-xs font-medium rounded-full ${
+                        evento.fallasRegistradas
+                          ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                          : "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                      }`}
+                    >
+                      {evento.fallasRegistradas ? "Con Fallas" : "Sin Fallas"}
+                    </span>
+                    {/* Etiqueta de estado del evento */}
+                    <span
+                      className={`px-2 py-1 text-xs font-medium rounded-full ${
+                        esEventoCompletado(evento.fechaEvento)
+                          ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                          : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                      }`}
+                    >
+                      {esEventoCompletado(evento.fechaEvento)
+                        ? "Completado"
+                        : "Programado"}
+                    </span>
+                  </div>
+
                   {/* Header del evento */}
-                  <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-start justify-between mb-4 pr-32">
                     <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-2">
+                      <div className="flex items-center space-x-3">
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                           {evento.nombreEvento}
                         </h3>
@@ -498,14 +600,11 @@ export default function HistorialSalaPage() {
                           {evento.tipoEvento}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Reservación #{evento.numeroReservacion}
-                      </p>
                     </div>
                   </div>
 
-                  {/* Información del evento */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                  {/* Información del evento - Primera fila */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                     <div className="flex items-center text-gray-600 dark:text-gray-400">
                       <CalendarIcon className="h-4 w-4 mr-2 text-blue-500" />
                       <div>
@@ -538,16 +637,19 @@ export default function HistorialSalaPage() {
                           Asistentes
                         </p>
                         <p className="text-sm">
-                          {evento.numeroAsistentesReal || "No registrado"}
+                          {obtenerRangoAsistentes(evento.numeroAsistentesReal)}
                         </p>
                       </div>
                     </div>
+                  </div>
 
+                  {/* Información del evento - Segunda fila */}
+                  <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mb-4">
                     <div className="flex items-center text-gray-600 dark:text-gray-400">
                       <UserIcon className="h-4 w-4 mr-2 text-blue-500" />
                       <div>
                         <p className="text-xs font-medium text-gray-900 dark:text-gray-100">
-                          Responsable
+                          Organizador
                         </p>
                         <p className="text-sm">
                           {evento.responsableSala.nombre}
@@ -580,7 +682,7 @@ export default function HistorialSalaPage() {
 
                   {/* Fallas registradas */}
                   {evento.fallasRegistradas && (
-                    <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                    <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mb-4">
                       <div className="flex items-start">
                         <AlertCircleIcon className="h-4 w-4 mr-2 text-red-500 mt-0.5" />
                         <div>
@@ -594,23 +696,34 @@ export default function HistorialSalaPage() {
                       </div>
                     </div>
                   )}
+
+                  {/* Botón de ver detalles en esquina inferior derecha */}
+                  <div className="flex justify-end -mt-10">
+                    <button
+                      onClick={() => verDetallesEvento(evento.id)}
+                      className="flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm"
+                    >
+                      <EyeIcon className="h-4 w-4 mr-1" />
+                      Ver Detalles
+                    </button>
+                  </div>
                 </div>
               </div>
             ))
           )}
-        </div>
 
-        {/* Paginación */}
-        {historial.length === limite && (
-          <div className="flex justify-center mt-6">
-            <button
-              onClick={() => setOffset(offset + limite)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-            >
-              Cargar más eventos
-            </button>
-          </div>
-        )}
+          {/* Paginación */}
+          {historial.length === limite && (
+            <div className="flex justify-center mt-6">
+              <button
+                onClick={() => setOffset(offset + limite)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              >
+                Cargar más eventos
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
