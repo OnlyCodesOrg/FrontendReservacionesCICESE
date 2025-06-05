@@ -9,6 +9,8 @@ import {
   CalendarIcon,
   ClockIcon,
   WrenchIcon,
+  HistoryIcon,
+  EditIcon,
 } from "lucide-react";
 
 // Interfaz basada en el modelo Sala del backend
@@ -230,27 +232,48 @@ export default function DetalleSalaPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto px-4 max-w-5xl">
         {/* Header con botón de volver */}
-        <div className="flex items-center mb-6">
-          <button
-            onClick={() => router.back()}
-            className="flex items-center text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors mr-4"
-          >
-            <ArrowLeftIcon className="h-5 w-5 mr-1" />
-            Volver
-          </button>
-          <div>
-            <h1 className="text-2xl font-bold text-blue-900 dark:text-blue-100">
-              Detalles de la Sala
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              Información completa de {sala.nombreSala}
-            </p>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center">
+            <button
+              onClick={() => router.back()}
+              className="flex items-center text-gray-400 dark:text-blue-400 hover:text-gray-700 dark:hover:text-blue-300 transition-colors mr-4"
+            >
+              <ArrowLeftIcon className="h-5 w-5 mr-1" />
+            </button>
+            <div>
+              <h1 className="text-2xl font-bold text-black dark:text-blue-100">
+                Información de la Sala
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400">
+                {sala.nombreSala} -{" "}
+                {sala.ubicacion || "Ubicación no especificada"}
+              </p>
+            </div>
+          </div>
+
+          {/* Botones de acción en el header */}
+          <div className="flex space-x-3">
+            <button
+              onClick={() => router.push(`/salas/historial/${sala.id}`)}
+              className="flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              <HistoryIcon className="h-4 w-4 mr-2" />
+              Ver Historial
+            </button>
+            <button
+              onClick={() => router.push(`/salas/${sala.id}/editar`)}
+              className="flex items-center px-4 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-800 transition-colors"
+            >
+              <EditIcon className="h-4 w-4 mr-2" />
+              Editar Información
+            </button>
           </div>
         </div>
 
-        <div className="w-full max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+        {/* Contenido principal */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
           {/* Información principal */}
           <div className="space-y-6">
             {/* Card principal */}
@@ -272,8 +295,15 @@ export default function DetalleSalaPage() {
                     />
                   </svg>
                 </div>
-                {/* Badge de estado */}
-                <div className="absolute top-4 right-4">
+              </div>
+
+              {/* Contenido */}
+              <div className="p-6">
+                <div className="flex items-center justify-start mb-4 gap-4">
+                  <h2 className="text-2xl font-bold text-blue-900 dark:text-gray-100">
+                    {sala.nombreSala}
+                  </h2>
+                  {/* Etiqueta de estado al lado del nombre */}
                   <span
                     className={`px-3 py-1 text-sm font-semibold rounded-full ${
                       sala.disponible
@@ -284,16 +314,9 @@ export default function DetalleSalaPage() {
                     {sala.disponible ? "Disponible" : "No disponible"}
                   </span>
                 </div>
-              </div>
-
-              {/* Contenido */}
-              <div className="p-6">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-                  {sala.nombreSala}
-                </h2>
 
                 {/* Información básica */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div className="space-y-4">
                   <div className="flex items-center text-gray-600 dark:text-gray-400">
                     <MapPinIcon className="h-5 w-5 mr-3 text-blue-500" />
                     <div>
@@ -316,7 +339,7 @@ export default function DetalleSalaPage() {
                 </div>
               </div>
             </div>
-            {/* ESTADO DE EQUIPAMIENTO AQUI ADAN*/}
+            {/* ESTADO DE EQUIPAMIENTO AQUI ADAN */}
           </div>
         </div>
       </div>
