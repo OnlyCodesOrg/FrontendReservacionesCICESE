@@ -22,6 +22,7 @@ export default function LoginPage() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
   const handleSubmit = async (e: React.FormEvent) => {
+
     e.preventDefault();
     setErrorMessage(null);
 
@@ -60,7 +61,7 @@ export default function LoginPage() {
 
       // Decidir a dónde redirigir; por simplicidad, a /dashboard
       // Si deseas redirigir según rol, debes decodificar el JWT y leer idRol
-      router.push("/dashboard");
+      router.push("/");
       
     } catch (error) {
       console.error("Error al hacer login:", error);

@@ -14,8 +14,8 @@ export default function CalendarioPage() {
       {
         id: "1",
         titulo: "Avances en Oceanografía",
-        fechaInicio: "2025-05-05T10:00:00",
-        fechaFin: "2025-05-05T12:00:00",
+        fechaInicio: "2025-06-05T10:00:00",
+        fechaFin: "2025-06-05T12:00:00",
         color: "bg-blue-500",
         salaId: "sala1",
         nombreSala: "Auditorio Principal"
@@ -23,8 +23,8 @@ export default function CalendarioPage() {
       {
         id: "2",
         titulo: "Tecnologías Emergentes",
-        fechaInicio: "2025-05-05T14:00:00",
-        fechaFin: "2025-05-05T16:00:00",
+        fechaInicio: "2025-06-05T14:00:00",
+        fechaFin: "2025-06-05T16:00:00",
         color: "bg-green-500",
         salaId: "sala2",
         nombreSala: "Sala de Juntas"
@@ -32,8 +32,8 @@ export default function CalendarioPage() {
       {
         id: "3",
         titulo: "Biología Marina",
-        fechaInicio: "2025-05-12T09:00:00",
-        fechaFin: "2025-05-12T11:30:00",
+        fechaInicio: "2025-06-12T09:00:00",
+        fechaFin: "2025-06-12T11:30:00",
         color: "bg-purple-500",
         salaId: "sala1",
         nombreSala: "Auditorio Principal"
@@ -41,8 +41,8 @@ export default function CalendarioPage() {
       {
         id: "4",
         titulo: "Cambio Climático",
-        fechaInicio: "2025-05-20T13:00:00",
-        fechaFin: "2025-05-20T15:00:00",
+        fechaInicio: "2025-06-20T13:00:00",
+        fechaFin: "2025-06-20T15:00:00",
         color: "bg-yellow-500",
         salaId: "sala3",
         nombreSala: "Sala Multimedia"
@@ -50,8 +50,8 @@ export default function CalendarioPage() {
       {
         id: "5",
         titulo: "Inteligencia Artificial",
-        fechaInicio: "2025-05-28T16:00:00",
-        fechaFin: "2025-05-28T18:00:00",
+        fechaInicio: "2025-06-28T16:00:00",
+        fechaFin: "2025-06-28T18:00:00",
         color: "bg-red-500",
         salaId: "sala2",
         nombreSala: "Sala de Juntas"

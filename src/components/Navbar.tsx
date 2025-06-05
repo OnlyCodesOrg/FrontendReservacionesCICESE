@@ -74,24 +74,20 @@ export default function Navbar() {
         </div>
 
         <nav className="hidden md:flex items-center gap-6">
-          <Link href="/dashboard" className="text-sm hover:text-blue-600 dark:hover:text-blue-400">
-            Dashboard
-          </Link>
-          <Link href="/salas" className="text-sm hover:text-blue-600 dark:hover:text-blue-400">
+         
+          <Link href="/dashboard/salas" className="text-sm hover:text-blue-600 dark:hover:text-blue-400">
             Salas
           </Link>
-          <Link href="/reservas" className="text-sm hover:text-blue-600 dark:hover:text-blue-400">
+          <Link href="/dashboard/reservas" className="text-sm hover:text-blue-600 dark:hover:text-blue-400">
             Reservas
           </Link>
-          <Link href="/reportes" className="text-sm hover:text-blue-600 dark:hover:text-blue-400">
+          <Link href="/dashboard/reportes" className="text-sm hover:text-blue-600 dark:hover:text-blue-400">
             Reportes
           </Link>
-          <Link href="/calendario" className="text-sm hover:text-blue-600 dark:hover:text-blue-400">
+          <Link href="/dashboard/calendario" className="text-sm hover:text-blue-600 dark:hover:text-blue-400">
             Calendario
           </Link>
-          <Link href="/test" className="text-sm hover:text-blue-600 dark:hover:text-blue-400">
-            Pokemon
-          </Link>
+          
         </nav>
 
         <div className="flex items-center gap-4">
@@ -111,7 +107,7 @@ export default function Navbar() {
             </div>
           ) : (
             <Link
-              href="/login"
+              href="/auth/login"
               className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition"
             >
               Iniciar Sesión
