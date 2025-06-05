@@ -256,14 +256,14 @@ export default function DetalleSalaPage() {
           {/* Botones de acción en el header */}
           <div className="flex space-x-3">
             <button
-              onClick={() => router.push(`/salas/historial/${sala.id}`)}
+              onClick={() => router.push(`/salas-tecnico/historial/${sala.id}`)}
               className="flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               <HistoryIcon className="h-4 w-4 mr-2" />
               Ver Historial
             </button>
             <button
-              onClick={() => router.push(`/salas/${sala.id}/editar`)}
+              onClick={() => router.push(`/salas-tecnico/${sala.id}/editar`)}
               className="flex items-center px-4 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-800 transition-colors"
             >
               <EditIcon className="h-4 w-4 mr-2" />
