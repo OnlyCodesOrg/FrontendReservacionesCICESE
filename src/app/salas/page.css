@@ -1,0 +1,55 @@
+.sd-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2px;
+    width: 100%;
+    padding: 30px;
+    border: 1px solid #838383AF;
+    border-radius: 8px;
+}
+
+.sd-info article {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    border-right: 1px solid #838383FA;
+    padding: 0px 10%;
+}
+
+.sd-info span {
+    font-weight: 500;
+    font-size: 1.2rem;
+}
+
+.sd-info p {
+    color: #343434;
+    font-size: 1rem;
+}
+
+.sd-info :last-child {
+    border: none;
+}
+
+.sd-salas {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 400px));
+    grid-auto-rows: minmax(200px, 300px);
+    gap: 5px;
+
+    width: 100%;
+    padding: 10px 0px;
+}
+
+.sd-salas article {
+    display: flex;
+    flex-direction: column;
+    border-radius: 8px;
+    border: 1px solid #838383AF;
+    box-shadow: 0px 4px 4px solid #000;
+    overflow: hidden;
+}
+
+.sd-salas article img {
+    height: 40%;
+    object-fit: cover;
+}
