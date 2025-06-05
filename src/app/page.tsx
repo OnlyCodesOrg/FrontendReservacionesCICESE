@@ -5,6 +5,7 @@ import Link from "next/link";
 export default function Home() {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950">
+      <Navbar />
 
       {/* Hero Section */}
       <section className="py-16 md:py-24">
@@ -20,13 +21,13 @@ export default function Home() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link
-                  href="solicitud-reservacion"
+                  href="/dashboard/solicitud-reservacion"
                   className="rounded-md bg-blue-600 px-6 py-3 text-base font-medium text-white hover:bg-blue-700 text-center"
                 >
                   Nueva Reserva
                 </Link>
                 <Link
-                  href="/calendario"
+                  href="/dashboard/calendario"
                   className="rounded-md bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 px-6 py-3 text-base font-medium text-center"
                 >
                   Ver Calendario

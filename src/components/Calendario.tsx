@@ -35,13 +35,13 @@ export default function Calendar({ conferencias }: CalendarProps) {
   // Función para navegar a la página de detalles
   const handleConferenciaClick = (id: string, event: React.MouseEvent) => {
     event.stopPropagation(); // Evitar que se active el click del día
-    router.push(`/conferencia/${id}`);
+    router.push(`/dashboard/conferencia/${id}`);
   };
 
   // Función para navegar a la página de reservación
   const handleDayClick = (day: Date) => {
     const dateString = format(day, "yyyy-MM-dd");
-    router.push(`/solicitud-reservacion?fecha=${dateString}`);
+    router.push(`/dashboard/solicitud-reservacion?fecha=${dateString}`);
   };
 
   return (
@@ -88,6 +88,7 @@ export default function Calendar({ conferencias }: CalendarProps) {
           const conferenciasDelDia = getConferenciasByDay(day);
           const dayKey = day.toString();
           const isHovered = hoveredDay === dayKey;
+          const hasConferencias = conferenciasDelDia.length > 0;
           
           return (
             <div
@@ -103,8 +104,24 @@ export default function Calendar({ conferencias }: CalendarProps) {
             >
               <div className="font-medium mb-1">{format(day, "d")}</div>
               
-              {/* Overlay para mostrar "Agendar Reservación" */}
-              {isHovered && (
+              {/* Ícono de + para días con conferencias */}
+              {hasConferencias && isHovered && (
+                <div className="absolute top-2 right-2 z-30">
+                  <div className="relative group">
+                    <div className="w-4 h-4 bg-blue-600 hover:bg-blue-700 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-lg transition-all duration-200 hover:scale-110">
+                      +
+                    </div>
+                    {/* Tooltip */}
+                    <div className="absolute bottom-full right-0 mb-2 px-2 py-1 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+                      Agendar Reservación
+                      <div className="absolute top-full right-2 w-0 h-0 border-l-2 border-r-2 border-t-2 border-transparent border-t-gray-900 dark:border-t-gray-700"></div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Overlay para días SIN conferencias */}
+              {!hasConferencias && isHovered && (
                 <div className="absolute inset-0 bg-blue-500/10 dark:bg-blue-400/10 flex items-center justify-center rounded z-20">
                   <span className="text-blue-600 dark:text-blue-400 font-medium text-sm">
                     Agendar Reservación
