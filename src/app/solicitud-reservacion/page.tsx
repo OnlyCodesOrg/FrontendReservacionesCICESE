@@ -2,6 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 // Tipos TypeScript
 interface Participante {
@@ -44,6 +45,7 @@ interface FormData {
 
 export default function SolicitudReservacionPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const fecha = searchParams.get("fecha") || "";
   const [formData, setFormData] = useState<FormData>({
     nombreCompleto: "",
@@ -74,7 +76,6 @@ export default function SolicitudReservacionPage() {
     participantes: [{ nombre: "", correo: "" }],
   });
   const [userId, setUserId] = useState<number | null>(null);
-  const [submitting, setSubmitting] = useState<boolean>(false);
   useEffect(() => {
     const API_URL = process.env.NEXT_PUBLIC_API_URL || window.location.origin;
     const token = localStorage.getItem("access_token");
@@ -197,70 +198,49 @@ export default function SolicitudReservacionPage() {
       ),
     }));
   };
-  const handleSubmit = async () => {
-    if (userId === null) {
-      alert("Debes iniciar sesión para enviar la solicitud.");
+  const handleSiguiente = () => {
+    // Validaciones básicas
+    if (!formData.nombreCompleto.trim()) {
+      alert("Por favor ingresa tu nombre completo");
+      return;
+    }
+    if (!formData.correo.trim()) {
+      alert("Por favor ingresa tu correo");
+      return;
+    }
+    if (!formData.nombreEvento.trim()) {
+      alert("Por favor ingresa el nombre del evento");
+      return;
+    }
+    if (!formData.tipoEvento) {
+      alert("Por favor selecciona el tipo de evento");
+      return;
+    }
+    if (!formData.fechaEvento) {
+      alert("Por favor selecciona la fecha del evento");
+      return;
+    }
+    if (!formData.horaInicio) {
+      alert("Por favor selecciona la hora de inicio");
+      return;
+    }
+    if (!formData.horaFinalizacion) {
+      alert("Por favor selecciona la hora de finalización");
+      return;
+    }
+    if (!formData.numeroParticipantes) {
+      alert("Por favor selecciona el número de participantes");
       return;
     }
 
-    setSubmitting(true);
+    // Guardar los datos en localStorage para pasarlos a la siguiente página
+    localStorage.setItem('solicitudReservacion', JSON.stringify({
+      formData,
+      userId
+    }));
 
-    try {
-      const numeroReservacion = `RES-${Date.now()}`;
-      const asistentesEstimado =
-        parseInt(formData.numeroParticipantes.split("-")[0]) || 0;
-      const serviciosSeleccionados = Object.entries(
-        formData.serviciosRequeridos
-      )
-        .filter(([_, selected]) => selected)
-        .map(([item]) => item)
-        .join(", ");
-      const observacionesTexto = serviciosSeleccionados
-        ? `Servicios requeridos: ${serviciosSeleccionados}`
-        : "";
-      const payload = {
-        numeroReservacion: numeroReservacion,
-        idUsuario: userId,
-        idSala: 1, 
-        nombreEvento: formData.nombreEvento,
-        tipoEvento: formData.tipoEvento,
-        fechaEvento: formData.fechaEvento,
-        horaInicio: formData.horaInicio,
-        horaFin: formData.horaFinalizacion,
-        asistentes: asistentesEstimado,
-        observaciones: observacionesTexto,
-      };
-      const API_URL =
-        process.env.NEXT_PUBLIC_API_URL || window.location.origin;
-      const endpointReservacion = `${API_URL}/reservaciones/crear`;
-
-      const response = await fetch(endpointReservacion, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(
-          `Error al crear reservación: ${response.statusText} - ${errorText}`
-        );
-      }
-
-      const created = await response.json();
-      console.log("Reservación creada (respuesta del back):", created);
-      alert("Reservación enviada con éxito.");
-      window.location.href = "/reservas";
-    } catch (error: any) {
-      console.error("Error al enviar la solicitud:", error);
-      alert(
-        "Hubo un error al enviar la solicitud. Por favor revisa la consola y vuelve a intentarlo."
-      );
-    } finally {
-      setSubmitting(false);
-    }
+    // Navegar a la página de confirmación
+    router.push('/confirmar-solicitud');
   };
 
   return (
@@ -593,11 +573,10 @@ export default function SolicitudReservacionPage() {
               </div>
               <div className="flex justify-end">
                 <button
-                  onClick={handleSubmit}
-                  disabled={submitting}
-                  className="px-8 py-3 bg-blue-900 text-white rounded-md hover:bg-blue-800 transition-colors disabled:opacity-50"
+                  onClick={handleSiguiente}
+                  className="px-8 py-3 bg-blue-900 text-white rounded-md hover:bg-blue-800 transition-colors"
                 >
-                  {submitting ? "Enviando..." : "Enviar Solicitud"}
+                  Siguiente
                 </button>
               </div>
             </div>
