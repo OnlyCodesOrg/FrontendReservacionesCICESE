@@ -80,11 +80,11 @@ export default function SalasPage() {
   });
 
   const handleVerDetalles = (idSala: number) => {
-    router.push(`/salas-tecnico/${idSala}`);
+    router.push(`/dashboard/salas-tecnico/${idSala}`);
   };
 
   const handleEditar = (idSala: number) => {
-    router.push(`/salas-tecnico/${idSala}/editar`);
+    router.push(`/dashboard/salas-tecnico/${idSala}/editar`);
   };
 
   const formatearFecha = (fecha?: string) => {
@@ -144,7 +144,7 @@ export default function SalasPage() {
             </h2>
           </div>
           <button 
-            onClick={() => router.push('/salas/nueva')}
+            onClick={() => router.push('/dashboard/salas/nueva')}
             className="px-4 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-800 transition-colors"
           >
             <CirclePlusIcon className="inline-block mr-2 h-7 w-5" />

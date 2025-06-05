@@ -90,7 +90,7 @@ export default function ConfirmarSolicitudPage() {
       }
     } else {
       // Si no hay datos, redirigir de vuelta al formulario
-      router.push("/solicitud-reservacion");
+      router.push("/dashboard/solicitud-reservacion");
     }
   }, [router]);
 
@@ -154,7 +154,7 @@ export default function ConfirmarSolicitudPage() {
       localStorage.removeItem("solicitudReservacion");
 
       alert("¡Reservación confirmada con éxito!");
-      router.push("/reservas");
+      router.push("/dashboard/reservas");
     } catch (error: any) {
       console.error("Error al confirmar la solicitud:", error);
       alert(
@@ -175,7 +175,7 @@ export default function ConfirmarSolicitudPage() {
         salaSeleccionada, // ← Preservar la sala actual
       })
     );
-    router.push("/seleccionar-sala");
+    router.push("/dashboard/seleccionar-sala");
   };
 
   const getDepartamentoNombre = (id: string) => {
