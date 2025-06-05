@@ -69,17 +69,17 @@ export default function Sidebar() {
     {
       icon: "📅",
       label: "Calendario",
-      href: "/calendario"
+      href: "/dashboard/calendario"
     },
     {
       icon: "📋",
       label: "Mis Solicitudes",
-      href: "/reservas"
+      href: "/dashboard/reservas"
     },
     {
       icon: "🏢",
       label: "Salas",
-      href: "/salas"
+      href: "/dashboard/salas"
     }
   ];
 

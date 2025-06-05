@@ -136,7 +136,7 @@ export default function ConferenciaDetalle({ params }: { params: { id: string } 
   return (
     <div className="container mx-auto px-4 py-8">
       <Link 
-        href="/calendario" 
+        href="/dashboard/calendario" 
         className="inline-flex items-center mb-6 text-blue-600 hover:text-blue-800"
       >
         ← Volver al calendario
