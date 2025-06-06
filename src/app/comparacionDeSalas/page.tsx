@@ -1,25 +1,25 @@
-import React from "react";
-
-const roomsTemp = [
-    { name: "Sala A Conferencias", capacity: 30, bookings: [{ label: "Ocupado", start: 10, end: 12, color: "bg-red-300" }] },
-    { name: "Sala E Computacion", capacity: 30, bookings: [{ label: "Ocupado", start: 10, end: 12, color: "bg-red-300" }] },
-    { name: "Sala C Ciencias", capacity: 30, bookings: [{ label: "Ocupado", start: 4, end: 20, color: "bg-red-300" }] },
-    { name: "Sala D Redes", capacity: 30, bookings: [{ label: "Mantenimiento", start: 8, end: 10, color: "bg-yellow-200" }] },
-];
+'use client'
+import React, { useEffect, useState } from "react";
+import { useGetSalasDisponibles } from "../api/salas/useGetSalas";
 
 const hours = Array.from({ length: 24 }, (_, i) => i); // 8:00 - 17:00
-type Props = {
-    rooms: string[]
-}
 
-/**
- * 
- * @param rooms Lista de salas
- * @returns 
- */
-export function ComparacionDeSalas({ rooms }: Props) {
-
-    return (
+// Necesito que envien la fecha
+export default function page() {
+    const [salas, setSalas] = useState<Array<any>>([]);
+    useEffect(() => {
+        const cargarDatas = async () => {
+            const salasFetch = await useGetSalasDisponibles("2025-06-20", "10:00", "11:00", [1, 2]);
+            console.log(salasFetch);
+            setSalas(salasFetch);
+        }
+        cargarDatas();
+    }, [])
+    return !salas ? (
+        <div>
+            Cargando..
+        </div>
+    ) : (
         <div className="container mx-auto px-4 py-8">
             <div className="mb-6">
                 <h2 className="text-xl font-semibold">Comparación de Salas</h2>
@@ -34,8 +34,8 @@ export function ComparacionDeSalas({ rooms }: Props) {
                 <div className="border p-4 rounded shadow-sm max-w-[600px]">
                     <p className="text-sm text-gray-500">Salas</p>
                     <div className="flex overflow-auto">
-                        {roomsTemp.map((current, index) => {
-                            if (index != roomsTemp.length - 1) {
+                        {salas.map((current, index) => {
+                            if (index != salas.length - 1) {
                                 return (
                                     <div className="flex flex-col mr-2">
                                         <p className="font-medium">{current.name} -</p>
@@ -62,16 +62,14 @@ export function ComparacionDeSalas({ rooms }: Props) {
                         </div>
                     ))}
 
-                    {roomsTemp.map((room, index) => (
+                    {salas.map((room, index) => (
                         <React.Fragment key={index}>
                             <div className=" p-2 text-sm">
                                 <div>{room.name}</div>
-                                <div className="text-gray-500 text-xs">👥 {room.capacity}</div>
+                                <div className="text-gray-500 text-xs">{room.capacity}</div>
                             </div>
                             {hours.map((hour) => {
-                                const booking = room.bookings.find(
-                                    (b) => hour >= b.start && hour < b.end
-                                );
+                                const booking = room.horaInicio
                                 return (
                                     <div
                                         key={hour}

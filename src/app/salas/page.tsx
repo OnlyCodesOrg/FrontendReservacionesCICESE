@@ -56,9 +56,10 @@ export default function page() {
         }
     }
 
+    
     return (
         <div className="container mx-auto px-4 py-8">
-            <h1 className="text-[2.5rem] mb-4 font-semibold">Consultar Salas</h1>
+            <h1 className="text-[2.5rem] mb-4 font-semibold">Nueva</h1>
             <section className="sd-info">
                 <article>
                     <p className="text-[.8rem]">Fecha</p>
