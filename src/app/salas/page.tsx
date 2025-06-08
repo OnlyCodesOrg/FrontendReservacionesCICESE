@@ -12,7 +12,7 @@ export default function page() {
 
     useEffect(() => {
         const funcion = async () => {
-            const backRes = await useGetSalas(fecha.inicio, fecha.fin, []);
+            const backRes = await useGetSalas();
             if (backRes) {
                 setSalas(backRes);
                 console.log(backRes)

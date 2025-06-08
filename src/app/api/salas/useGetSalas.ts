@@ -1,4 +1,8 @@
 import { BackendRoute } from "@/types/api/route"
+export async function consultarSalas() {
+    
+}
+
 export async function useGetSalasOcupadasDisponibles(diaDelEvento: string, salasSeleccionadas: number[]) {
     try {
         const fetchData = await fetch(`${BackendRoute}/salas/listar`, {
