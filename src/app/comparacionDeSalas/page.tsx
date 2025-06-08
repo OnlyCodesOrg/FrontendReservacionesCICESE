@@ -1,23 +1,34 @@
 'use client'
 import React, { useEffect, useState } from "react";
-import { useGetSalasDisponibles } from "../api/salas/useGetSalas";
+import { useGetSalasOcupadasDisponibles } from "../api/salas/useGetSalas";
+import { useParams } from "next/navigation";
+import { Currency } from "lucide-react";
 
-const hours = Array.from({ length: 24 }, (_, i) => i); // 8:00 - 17:00
+const hours = Array.from({ length: 24 }, (_, i) => i); // 0:00 - 23:00
 
-// Necesito que envien la fecha
-export default function page() {
+export default function Page() {
+    // UNA VEZ SE TENGA LAS PANTALLAS PREVIAS A ESA, HAY QUE CAMBIAR LA FECHA
+    // const { fecha } = useParams();
+    const fecha = "2025-06-20"
+    const salasSeleccionadas = [1, 2];
+
     const [salas, setSalas] = useState<Array<any>>([]);
+
     useEffect(() => {
-        const cargarDatas = async () => {
-            const salasFetch = await useGetSalasDisponibles("2025-06-20", "10:00", "11:00", [1, 2]);
-            console.log(salasFetch);
-            setSalas(salasFetch);
-        }
-        cargarDatas();
-    }, [])
-    return !salas ? (
-        <div>
-            Cargando..
+        const cargarDatos = async () => {
+            const data = await useGetSalasOcupadasDisponibles("2025-06-20", []);
+            const todasLasSalas = [...data.salasDisponibles, ...data.salasOcupadas];
+            console.log(todasLasSalas)
+            setSalas(todasLasSalas);
+        };
+        cargarDatos();
+    }, []);
+
+    
+
+    return salas.length === 0 ? (
+        <div className="flex w-screen h-screen items-center justify-center">
+            <p>Cargando...</p>
         </div>
     ) : (
         <div className="container mx-auto px-4 py-8">
@@ -26,66 +37,57 @@ export default function page() {
                 <p className="text-sm text-gray-500">Selecciona las salas y compara horarios</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mb-6 w-fit">
-                <div className="border p-4 rounded shadow-sm">
-                    <p className="text-sm text-gray-500">Fecha</p>
-                    <p className="font-medium">12 de Mayo 2025</p>
+            <div className="max-w-[300px] min-h-[80px] flex border-2 mb-2 rounded-md">
+                <div className="flex flex-col justify-center w-1/2 border-r mx-2">
+                    <span className="text-[.8rem]">Fecha</span>
+                    <p className="font-semibold">{fecha}</p>
                 </div>
-                <div className="border p-4 rounded shadow-sm max-w-[600px]">
-                    <p className="text-sm text-gray-500">Salas</p>
-                    <div className="flex overflow-auto">
-                        {salas.map((current, index) => {
-                            if (index != salas.length - 1) {
-                                return (
-                                    <div className="flex flex-col mr-2">
-                                        <p className="font-medium">{current.name} -</p>
-                                    </div>
-                                )
-                            } else {
-                                return (
-                                    <div className="flex flex-col mr-2">
-                                        <p className="font-medium">{current.name}</p>
-                                    </div>
-                                )
-                            }
-                        })}
-                    </div>
+                <div className="flex flex-col justify-center w-1/2 mx-2">
+                    <span className="text-[.8rem]">Salas</span>
+                    <p className="font-semibold">{salasSeleccionadas.map((current: any) => `${current} ` )}</p>
                 </div>
             </div>
 
-            <div className="border rounded p-4 overflow-auto">
-                <div className="grid grid-cols-[200px_repeat(24,1fr)] gap-y-px">
-                    <div className="font-semibold">Salas</div>
+
+            <div className="border rounded p-4 overflow-x-auto ">
+                <div className="min-w-[1000px] grid grid-cols-[200px_repeat(24,150px)] gap-y-px">
+                    {/* Encabezado de horas */}
+                    <div className="font-semibold">Sala / Hora</div>
                     {hours.map((hour) => (
                         <div key={hour} className="text-center text-sm font-medium">
-                            {hour}:00
+                            {hour}:00 - {hour + 1}:00
                         </div>
                     ))}
 
+                    {/* Filas por sala */}
                     {salas.map((room, index) => (
                         <React.Fragment key={index}>
-                            <div className=" p-2 text-sm">
-                                <div>{room.name}</div>
-                                <div className="text-gray-500 text-xs">{room.capacity}</div>
+                            <div className="p-2 text-sm bg-gray-100">
+                                <div className="font-semibold">{room.nombreSala}</div>
+                                <div className="text-gray-500 text-xs">Capacidad maxima: {room.capacidadMax}</div>
                             </div>
+
                             {hours.map((hour) => {
-                                const booking = room.horaInicio
+                                const reserva = room.reservas?.find(
+                                    (r: any) => hour >= r.start && hour < r.end
+                                );
+
+                                const isInicio = reserva?.start === hour;
+                                const isFin = reserva?.end === hour + 1;
+
                                 return (
-                                    <div
-                                        key={hour}
-                                        className={`h-16 flex items-center justify-center text-xs ${booking ? booking.color + " text-black font-medium" : ""
-                                            } ${booking && hour === booking.start ? "rounded-l" : ""
-                                            } ${booking && hour === booking.end - 1 ? "rounded-r" : ""
-                                            }`}
-                                    >
-                                        {booking && hour === booking.start ? (
+                                    <div key={hour}
+                                        className={`h-16 flex items-center justify-center text-xs
+                                            ${reserva ? "bg-red-400 rounded-sm border-2 border-red-300" : "border-x"}
+                                            `}>
+                                        {isInicio && (
                                             <div className="text-center">
-                                                <div>{booking.label}</div>
+                                                <div>{reserva.label || "Reservado"}</div>
                                                 <div className="text-[10px]">
-                                                    {booking.start}:00 - {booking.end}:00
+                                                    {reserva.start}:00 - {reserva.end}:00
                                                 </div>
                                             </div>
-                                        ) : null}
+                                        )}
                                     </div>
                                 );
                             })}
@@ -95,5 +97,4 @@ export default function page() {
             </div>
         </div>
     );
-};
-
+}

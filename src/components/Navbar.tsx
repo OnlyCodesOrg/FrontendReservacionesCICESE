@@ -75,7 +75,7 @@ export default function Navbar() {
 
         <nav className="hidden md:flex items-center gap-6">
          
-          <Link href="/dashboard/salas" className="text-sm hover:text-blue-600 dark:hover:text-blue-400">
+          <Link href="/salas" className="text-sm hover:text-blue-600 dark:hover:text-blue-400">
             Salas
           </Link>
           <Link href="/dashboard/reservas" className="text-sm hover:text-blue-600 dark:hover:text-blue-400">
