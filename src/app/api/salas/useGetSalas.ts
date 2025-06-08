@@ -1,6 +1,15 @@
 import { BackendRoute } from "@/types/api/route"
-export async function consultarSalas() {
-    
+
+export async function useGetSalas() {
+    try {
+        const fetchData = await fetch(`http://localhost:3000/salas/consultar-disponibilidad`);
+        if (!fetchData.ok) throw new Error("Problemas con el fetch");
+        const data = await fetchData.json();
+        return data;
+    } catch (e) {
+        console.error(e);
+        return null
+    }
 }
 
 export async function useGetSalasOcupadasDisponibles(diaDelEvento: string, salasSeleccionadas: number[]) {
