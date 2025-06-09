@@ -1,7 +1,7 @@
 'use client'
 import React, { useEffect, useState } from 'react'
 import { ObtenerEquipoDeSala } from './useGetEquipo';
-import { useGetSala } from './useGetSala';
+import { getSala } from './useGetSala';
 
 export default function Page() {
     const [sala, setSala] = useState<any>({})
@@ -10,7 +10,7 @@ export default function Page() {
 
     useEffect(() => {
         const funcion = async () => {
-            const sala = await useGetSala(1);
+            const sala = await getSala(1);
             const equipo = await ObtenerEquipoDeSala(1);
             if (sala && equipo) {
                 setSala(sala)

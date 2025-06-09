@@ -1,7 +1,7 @@
 "use client"
 import React, { useEffect, useState } from "react";
 import './page.css';
-import { useGetSalas } from "../api/salas/useGetSalas";
+import { getSalas } from "../api/salas/useGetSalas";
 import Navbar from "@/components/Navbar";
 
 export default function Page() {
@@ -9,7 +9,7 @@ export default function Page() {
 
     useEffect(() => {
         const fetchSalas = async () => {
-            const backRes = await useGetSalas();
+            const backRes = await getSalas();
             if (backRes) {
                 setSalas(backRes);
                 console.log("Actualizado:", backRes);
