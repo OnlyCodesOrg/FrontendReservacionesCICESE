@@ -1,6 +1,8 @@
 
 "use client";
 // skrl
+import Advertencia from "@/components/ui/advertencia"
+import NotificacionTecnico from "@/components/ui/notificacion-tecnico";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
@@ -199,6 +201,8 @@ export default function SalaDetallePage() {
               )}
             </div>
           </div>
+{/*           
+          <Advertencia /> */}
           <div className="flex gap-2">
             <button className="bg-blue-900 text-white rounded px-4 py-2 text-sm font-medium hover:bg-blue-800">
               Reservar Sala
@@ -263,8 +267,20 @@ export default function SalaDetallePage() {
             <div className="bg-gray-100 rounded-lg p-4 text-gray-500 text-sm">
               No hay observaciones registradas.
             </div>
+            
           )}
+          
         </div>
+
+        {/* <div>
+          <NotificacionTecnico
+            sala={sala.nombreSala}
+            fecha="7 Jun 2025"
+            horario="11:00 - 13:00"
+            fechaAsignacion="15 mayo 2025"
+            onVerDetalles={() => router.push(`/dashboard/room/${idSala}/details`)}
+          />
+        </div> */}
       </div>
     </div>
   );
