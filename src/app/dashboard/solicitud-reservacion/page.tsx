@@ -240,7 +240,7 @@ function SolicitudReservacionForm() {
     }));
 
     // Navegar a la página de confirmación
-    router.push('/confirmar-solicitud');
+    router.push('/dashboard/confirmar-solicitud');
   };
 
   return (
