@@ -52,6 +52,23 @@ interface SalaSeleccionada {
   equipamiento?: string[];
 }
 
+const getUserIdFromToken = () => {
+  try {
+    const token = localStorage.getItem("access_token");
+    if (!token) return null;
+
+    // Decodificar JWT (parte del payload)
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    console.log("🔍 Token payload:", payload);
+    
+    // El userId puede estar en diferentes campos según tu backend
+    return payload.id || payload.userId || payload.sub || 1; // fallback a 1
+  } catch (error) {
+    console.warn("Error decodificando token:", error);
+    return 1; // Usuario por defecto
+  }
+};
+
 export default function ConfirmarSolicitudPage() {
   const router = useRouter();
   const [formData, setFormData] = useState<FormData | null>(null);
@@ -63,16 +80,31 @@ export default function ConfirmarSolicitudPage() {
   useEffect(() => {
     // Recuperar los datos del localStorage
     const savedData = localStorage.getItem("solicitudReservacion");
+    console.log("🔍 Raw localStorage data:", savedData);
+    
     if (savedData) {
       const parsedData = JSON.parse(savedData);
+      console.log("📊 Parsed localStorage data:", parsedData);
+      
       const {
         formData: savedFormData,
         userId: savedUserId,
-        salaSeleccionada: savedSala, // ← Preparado para cuando llegue
+        salaSeleccionada: savedSala,
       } = parsedData;
 
+      console.log("🔍 Extracted values:", {
+        savedFormData: !!savedFormData,
+        savedUserId: savedUserId,
+        savedSala: !!savedSala
+      });
+
       setFormData(savedFormData);
-      setUserId(savedUserId);
+
+      // CAMBIAR: Obtener userId del token en lugar de user
+      const userIdFromToken = getUserIdFromToken();
+      const finalUserId = savedUserId || userIdFromToken;
+      console.log("👤 UserId final asignado:", finalUserId);
+      setUserId(finalUserId);
 
       // Si hay sala seleccionada, la usamos; si no, usamos valores por defecto
       if (savedSala) {
@@ -92,15 +124,25 @@ export default function ConfirmarSolicitudPage() {
       // Si no hay datos, redirigir de vuelta al formulario
       router.push("/dashboard/solicitud-reservacion");
     }
-  }, [router]);
+  }, [router]); // QUITAR: user de las dependencias
 
   const handleConfirmar = async () => {
+    console.log("🚀 Iniciando handleConfirmar");
+    console.log("📊 FormData:", formData);
+    console.log("👤 UserId:", userId);
+    console.log("🏢 SalaSeleccionada:", salaSeleccionada);
+
     if (!formData || userId === null || !salaSeleccionada) {
+      console.error(
+        "❌ Faltan datos:",
+        { formData: !!formData, userId, salaSeleccionada: !!salaSeleccionada }
+      );
       alert("Error: No se encontraron los datos de la solicitud");
       return;
     }
 
     setSubmitting(true);
+    console.log("⏳ Submitting establecido a true");
 
     try {
       const numeroReservacion = `RES-${Date.now()}`;
@@ -119,7 +161,7 @@ export default function ConfirmarSolicitudPage() {
       const payload = {
         numeroReservacion: numeroReservacion,
         idUsuario: userId,
-        idSala: salaSeleccionada.id, // ← Ahora usa la sala seleccionada
+        idSala: salaSeleccionada.id,
         nombreEvento: formData.nombreEvento,
         tipoEvento: formData.tipoEvento,
         fechaEvento: formData.fechaEvento,
@@ -129,9 +171,15 @@ export default function ConfirmarSolicitudPage() {
         observaciones: observacionesTexto,
       };
 
+      console.log("📦 Payload creado:", payload);
+
       const API_URL = process.env.NEXT_PUBLIC_API_URL || window.location.origin;
       const endpointReservacion = `${API_URL}/reservaciones/crear`;
 
+      console.log("🌐 API_URL:", API_URL);
+      console.log("📍 Endpoint completo:", endpointReservacion);
+
+      console.log("📡 Enviando request...");
       const response = await fetch(endpointReservacion, {
         method: "POST",
         headers: {
@@ -140,27 +188,37 @@ export default function ConfirmarSolicitudPage() {
         body: JSON.stringify(payload),
       });
 
+      console.log("📥 Response recibida:", response);
+      console.log("📊 Response status:", response.status);
+      console.log("📊 Response statusText:", response.statusText);
+      console.log("📊 Response ok:", response.ok);
+
       if (!response.ok) {
         const errorText = await response.text();
+        console.error("❌ Error response text:", errorText);
         throw new Error(
           `Error al crear reservación: ${response.statusText} - ${errorText}`
         );
       }
 
       const created = await response.json();
-      console.log("Reservación creada (respuesta del back):", created);
+      console.log("✅ Reservación creada (respuesta del back):", created);
 
       // Limpiar el localStorage
       localStorage.removeItem("solicitudReservacion");
+      console.log("🧹 LocalStorage limpiado");
 
       alert("¡Reservación confirmada con éxito!");
+      console.log("🎉 Redirigiendo a /dashboard/reservas");
       router.push("/dashboard/reservas");
     } catch (error: any) {
-      console.error("Error al confirmar la solicitud:", error);
+      console.error("💥 Error al confirmar la solicitud:", error);
+      console.error("💥 Error stack:", error.stack);
       alert(
         "Hubo un error al confirmar la solicitud. Por favor vuelve a intentarlo."
       );
     } finally {
+      console.log("🏁 Estableciendo submitting a false");
       setSubmitting(false);
     }
   };
