@@ -1,6 +1,6 @@
 'use client'
 import React, { useEffect, useState } from "react";
-import { useGetSalasOcupadasDisponibles } from "../api/salas/useGetSalas";
+import { getSalasOcupadasDisponibles } from "../api/salas/useGetSalas";
 import { useParams } from "next/navigation";
 import { Currency } from "lucide-react";
 
@@ -16,7 +16,7 @@ export default function Page() {
 
     useEffect(() => {
         const cargarDatos = async () => {
-            const data = await useGetSalasOcupadasDisponibles("2025-06-20", []);
+            const data = await getSalasOcupadasDisponibles(fecha, []);
             const todasLasSalas = [...data.salasDisponibles, ...data.salasOcupadas];
             console.log(todasLasSalas)
             setSalas(todasLasSalas);

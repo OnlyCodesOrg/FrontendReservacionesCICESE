@@ -1,6 +1,6 @@
 import { BackendRoute } from "@/types/api/route"
 
-export async function useGetSalas() {
+export async function getSalas() {
     try {
         const fetchData = await fetch(`http://localhost:3000/salas/consultar-disponibilidad`);
         if (!fetchData.ok) throw new Error("Problemas con el fetch");
@@ -12,7 +12,7 @@ export async function useGetSalas() {
     }
 }
 
-export async function useGetSalasOcupadasDisponibles(diaDelEvento: string, salasSeleccionadas: number[]) {
+export async function getSalasOcupadasDisponibles(diaDelEvento: string, salasSeleccionadas: number[]) {
     try {
         const fetchData = await fetch(`${BackendRoute}/salas/listar`, {
             method: "POST",
