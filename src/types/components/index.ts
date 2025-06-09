@@ -20,20 +20,31 @@ export interface ReservationFormData {
 // Tipo para las conferencias que recibe el componente
 export interface Conferencia {
   id: string;
+  numeroReservacion: string;
   titulo: string;
-  fechaInicio: string; // ISO string format
-  fechaFin: string;    // ISO string format
+  fechaInicio: string;
+  fechaFin: string;
   color: string;
   salaId: string;
   nombreSala: string;
-  // Nuevos campos para detalles
+  solicitante: {
+    nombre: string;
+    email: string;
+    departamento: string;
+  };
+  ubicacion: {
+    sala: string;
+    edificio: string;
+    piso: string;
+    capacidadMaxima: number;
+  };
+  participantes: number;
+  estado: 'pendiente' | 'aprobada' | 'rechazada' | 'completada';
+  fechaCreacion: string;
+  enlaceVideoconferencia?: string;
   descripcion?: string;
-  ponente?: string;
-  institucionPonente?: string;
-  capacidadSala?: number;
   equipoRequerido?: string[];
-  participantes?: number;
-  estado?: 'programada' | 'en curso' | 'finalizada' | 'cancelada';
+  serviciosExtra?: string[];
 }
 
 export default function ReservationForm({ availableRooms, currentUser, onSubmit, initialData }: ReservationFormProps) {
