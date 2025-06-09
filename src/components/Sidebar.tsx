@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
+import { useSidebar } from "@/context/SidebarContext";
 import {
   CalendarIcon,
   HomeIcon,
@@ -39,7 +40,7 @@ export default function Sidebar() {
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const { isCollapsed, toggleSidebar } = useSidebar();
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
@@ -90,21 +91,24 @@ export default function Sidebar() {
 
   // Función para determinar si una ruta está activa
   const isRouteActive = (href: string) => {
-    if (href === "/dashboard") {
-      // Para el dashboard, solo debe estar activo si es exactamente /dashboard
-      return pathname === "/dashboard";
+    if (href === "/") {
+      return pathname === "/";
     } else {
-      // Para otras rutas, debe empezar con la ruta específica
       return pathname === href || pathname.startsWith(href + '/');
     }
   };
 
   return (
-    <div className={`fixed left-0 top-0 h-full ${isCollapsed ? 'w-16' : 'w-64'} bg-white dark:bg-gray-800 shadow-lg transition-all duration-300 ease-in-out z-50`}>
+    <aside 
+      className={`fixed inset-y-0 left-0 bg-white dark:bg-gray-800 shadow-lg transition-all duration-300 ease-in-out z-40 border-r border-gray-200 dark:border-gray-700 ${
+        isCollapsed ? 'w-20' : 'w-72'
+      }`}
+    >
       {/* Toggle button */}
       <button
-        onClick={() => setIsCollapsed(!isCollapsed)}
-        className="absolute -right-3 top-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full p-1.5 shadow-md hover:shadow-lg transition-shadow z-10"
+        onClick={toggleSidebar}
+        className="absolute -right-3 top-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full p-1.5 shadow-md hover:shadow-lg transition-all duration-300 z-10"
+        aria-label={isCollapsed ? "Expandir sidebar" : "Colapsar sidebar"}
       >
         {isCollapsed ? (
           <ChevronRightIcon className="h-4 w-4 text-gray-600 dark:text-gray-400" />
@@ -113,9 +117,9 @@ export default function Sidebar() {
         )}
       </button>
 
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col h-full overflow-y-auto">
         {/* Logo */}
-        <div className="flex-shrink-0 flex items-center px-4 py-6">
+        <div className="flex-shrink-0 flex items-center h-16 px-4">
           {!isCollapsed ? (
             <div className="flex items-center">
               <div className="flex-shrink-0">
@@ -136,34 +140,69 @@ export default function Sidebar() {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-2 py-4 space-y-2">
+        <nav className="flex-1 space-y-1 px-2 py-4">
           {navigation.map((item) => {
             const isActive = isRouteActive(item.href);
             return (
               <Link
                 key={item.name}
                 href={item.href}
-                className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors ${
+                className={`group flex items-center px-2 py-2.5 text-sm font-medium rounded-md transition-all duration-200 ${
                   isActive
-                    ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                }`}
+                    ? 'bg-blue-50 dark:bg-blue-900/50 text-blue-700 dark:text-blue-200'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                } ${isCollapsed ? 'justify-center' : ''}`}
                 title={isCollapsed ? item.name : undefined}
               >
                 <item.icon
-                  className={`${isCollapsed ? 'mx-auto' : 'mr-3'} flex-shrink-0 h-5 w-5 ${
+                  className={`flex-shrink-0 h-5 w-5 ${
                     isActive
-                      ? 'text-blue-500 dark:text-blue-400'
+                      ? 'text-blue-600 dark:text-blue-400'
                       : 'text-gray-400 dark:text-gray-500 group-hover:text-gray-500 dark:group-hover:text-gray-400'
                   }`}
                   aria-hidden="true"
                 />
-                {!isCollapsed && item.name}
+                {!isCollapsed && <span className="ml-3">{item.name}</span>}
               </Link>
             );
           })}
         </nav>
+
+        {/* User section */}
+        {!loading && user && (
+          <div className={`flex-shrink-0 flex border-t border-gray-200 dark:border-gray-700 p-4 ${
+            isCollapsed ? 'justify-center' : ''
+          }`}>
+            {!isCollapsed ? (
+              <div className="flex-shrink-0 w-full group block">
+                <div className="flex items-center">
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">
+                      {user.nombre}
+                    </p>
+                    <button
+                      onClick={handleLogout}
+                      className="text-xs text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 mt-1"
+                    >
+                      Cerrar Sesión
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={handleLogout}
+                className="text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 p-2 rounded-md transition-colors"
+                title="Cerrar Sesión"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+              </button>
+            )}
+          </div>
+        )}
       </div>
-    </div>
+    </aside>
   );
 }

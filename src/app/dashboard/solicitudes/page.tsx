@@ -278,165 +278,129 @@ export default function SolicitudesPage() {
   }
 
   return (
-    <>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
-        <div className="container mx-auto px-4">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              Mis Solicitudes
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              Consulta y gestiona todas tus solicitudes de reservación
-            </p>
-          </div>
-
-          {/* Filtros y búsqueda */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Buscador */}
-              <div className="md:col-span-2">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <input
-                    type="text"
-                    placeholder="Buscar por ID, título, sala o solicitante..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                  />
-                  {searchTerm && (
-                    <button
-                      onClick={() => setSearchTerm("")}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Filtro por estado */}
-              <div>
-                <div className="relative">
-                  <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white appearance-none"
-                  >
-                    <option value="all">Todos los estados</option>
-                    <option value="pendiente">Pendientes</option>
-                    <option value="aprobada">Aprobadas</option>
-                    <option value="rechazada">Rechazadas</option>
-                    <option value="completada">Completadas</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* Contador de resultados */}
-            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {filteredSolicitudes.length} solicitud{filteredSolicitudes.length !== 1 ? 'es' : ''} encontrada{filteredSolicitudes.length !== 1 ? 's' : ''}
-                {searchTerm && ` para "${searchTerm}"`}
-                {statusFilter !== "all" && ` con estado "${getEstadoTexto(statusFilter)}"`}
-              </p>
-            </div>
-          </div>
-
-          {/* Lista de solicitudes */}
-          {filteredSolicitudes.length === 0 ? (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-12 text-center">
-              <div className="mx-auto h-24 w-24 text-gray-400 dark:text-gray-600 mb-4">
-                <Search className="h-full w-full" />
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-                No se encontraron solicitudes
-              </h3>
-              <p className="text-gray-500 dark:text-gray-400">
-                {searchTerm || statusFilter !== "all" 
-                  ? "Intenta ajustar los filtros de búsqueda"
-                  : "No tienes solicitudes registradas"
-                }
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {filteredSolicitudes.map((solicitud) => (
-                <div
-                  key={solicitud.id}
-                  className="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-6"
-                >
-                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-                    {/* Información principal */}
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between mb-3">
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-                            {solicitud.titulo}
-                          </h3>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            ID: {solicitud.numeroReservacion}
-                          </p>
-                        </div>
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getEstadoColor(solicitud.estado)}`}>
-                          {getEstadoTexto(solicitud.estado)}
-                        </span>
-                      </div>
-
-                      {/* Detalles en grid */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-                        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                          <Calendar className="h-4 w-4" />
-                          <span>{formatFechaSafe(solicitud.fechaInicio)}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                          <Clock className="h-4 w-4" />
-                          <span>{formatHoraSafe(solicitud.fechaInicio)} - {formatHoraSafe(solicitud.fechaFin)}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                          <MapPin className="h-4 w-4" />
-                          <span>{solicitud.ubicacion.sala}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                          <Users className="h-4 w-4" />
-                          <span>{solicitud.participantes} personas</span>
-                        </div>
-                      </div>
-
-                      {/* Descripción truncada */}
-                      {solicitud.descripcion && (
-                        <p className="mt-3 text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
-                          {solicitud.descripcion}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Botón de acción */}
-                    <div className="mt-4 lg:mt-0 lg:ml-6">
-                      <button
-                        onClick={() => handleVerDetalles(solicitud)}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                      >
-                        <Eye className="h-4 w-4" />
-                        Ver Detalles
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="sm:flex sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Solicitudes</h1>
+          <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">
+            Lista de todas las solicitudes de reservación
+          </p>
+        </div>
+        <div className="mt-4 sm:mt-0">
+          <button
+            onClick={() => router.push('/dashboard/solicitudes/nueva')}
+            className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+          >
+            Nueva Solicitud
+          </button>
         </div>
       </div>
 
-      {/* Modal reutilizado */}
+      {/* Filters */}
+      <div className="grid gap-4 md:flex md:items-center md:justify-between">
+        <div className="relative flex-1 max-w-lg">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search className="h-5 w-5 text-gray-400" />
+          </div>
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Buscar por título, solicitante o sala..."
+            className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-800 placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-colors"
+          />
+        </div>
+        <div className="flex items-center space-x-2">
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md bg-white dark:bg-gray-800 transition-colors"
+            aria-label="Filtrar por estado"
+          >
+            <option value="all">Todos los estados</option>
+            <option value="pendiente">Pendiente</option>
+            <option value="aprobada">Aprobada</option>
+            <option value="rechazada">Rechazada</option>
+            <option value="completada">Completada</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Content */}
+      {loading ? (
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      ) : filteredSolicitudes.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-gray-500 dark:text-gray-400">No se encontraron solicitudes</p>
+        </div>
+      ) : (
+        <div className="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-md transition-colors">
+          <ul className="divide-y divide-gray-200 dark:divide-gray-700">
+            {filteredSolicitudes.map((solicitud) => (
+              <li key={solicitud.id}>
+                <div className="px-4 py-4 sm:px-6 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-3">
+                        <p className="text-sm font-medium text-blue-600 dark:text-blue-400 truncate">
+                          {solicitud.numeroReservacion}
+                        </p>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getEstadoColor(solicitud.estado)}`}>
+                          {getEstadoTexto(solicitud.estado)}
+                        </span>
+                      </div>
+                      <p className="mt-2 flex items-center text-sm text-gray-900 dark:text-white">
+                        {solicitud.titulo}
+                      </p>
+                    </div>
+                    <div className="ml-4 flex-shrink-0">
+                      <button
+                        onClick={() => handleVerDetalles(solicitud)}
+                        className="inline-flex items-center px-3 py-1.5 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                      >
+                        <Eye className="h-4 w-4 mr-1.5" />
+                        Ver detalles
+                      </button>
+                    </div>
+                  </div>
+                  <div className="mt-2 sm:flex sm:justify-between">
+                    <div className="sm:flex space-y-2 sm:space-y-0 sm:space-x-6">
+                      <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+                        <Users className="flex-shrink-0 mr-1.5 h-4 w-4" />
+                        {solicitud.participantes} participantes
+                      </div>
+                      <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+                        <MapPin className="flex-shrink-0 mr-1.5 h-4 w-4" />
+                        {solicitud.ubicacion.sala}
+                      </div>
+                    </div>
+                    <div className="mt-2 sm:mt-0 space-y-2 sm:space-y-0 sm:space-x-6 flex flex-col sm:flex-row text-sm text-gray-500 dark:text-gray-400">
+                      <div className="flex items-center">
+                        <Calendar className="flex-shrink-0 mr-1.5 h-4 w-4" />
+                        {formatFechaSafe(solicitud.fechaInicio)}
+                      </div>
+                      <div className="flex items-center">
+                        <Clock className="flex-shrink-0 mr-1.5 h-4 w-4" />
+                        {formatHoraSafe(solicitud.fechaInicio)} - {formatHoraSafe(solicitud.fechaFin)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Modal */}
       <ReservacionModal
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         reservacion={selectedSolicitud}
       />
-    </>
+    </div>
   );
 }
