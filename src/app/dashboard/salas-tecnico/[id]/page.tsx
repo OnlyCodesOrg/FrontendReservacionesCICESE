@@ -142,19 +142,6 @@ export default function DetalleSalaPage() {
     });
   };
 
-  const obtenerEquipamientoDisponible = () => {
-    return inventario
-      .filter((item) => item.detalles.Operativo > 0)
-      .map((item) => `${item.nombre} (${item.detalles.Operativo})`);
-  };
-
-  const obtenerTotalElementos = (elemento: ElementoInventario) => {
-    return Object.values(elemento.detalles).reduce(
-      (total, cantidad) => total + cantidad,
-      0
-    );
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 flex items-center justify-center">
@@ -230,30 +217,42 @@ export default function DetalleSalaPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto px-4 max-w-5xl"> {/* MISMO ANCHO QUE HISTORIAL */}
         {/* Header con botón de volver */}
-        <div className="flex items-center mb-6">
-          <button
-            onClick={() => router.back()}
-            className="flex items-center text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors mr-4"
-          >
-            <ArrowLeftIcon className="h-5 w-5 mr-1" />
-            Volver
-          </button>
-          <div>
-            <h1 className="text-2xl font-bold text-blue-900 dark:text-blue-100">
-              Detalles de la Sala
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              Información completa de {sala.nombreSala}
-            </p>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center">
+            <button
+              onClick={() => router.back()}
+              className="flex items-center text-gray-400 dark:text-blue-400 hover:text-gray-700 dark:hover:text-blue-300 transition-colors mr-4" // MISMO ESTILO QUE HISTORIAL
+            >
+              <ArrowLeftIcon className="h-5 w-5 mr-1" />
+            </button>
+            <div>
+              <h1 className="text-2xl font-bold text-black dark:text-blue-100"> {/* MISMO ESTILO QUE HISTORIAL */}
+                Detalles de la Sala
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400">
+                Información completa de {sala.nombreSala}
+              </p>
+            </div>
           </div>
+
+          {/* Botón Ver Historial */}
+          <button
+            onClick={() =>
+              router.push(`/dashboard/salas-tecnico/historial/${salaId}`)
+            }
+            className="flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" // MISMO ESTILO QUE BOTÓN EXPORTAR
+          >
+            <CalendarIcon className="h-4 w-4 mr-2" />
+            Ver Historial
+          </button>
         </div>
 
-        <div className="w-full max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-          {/* Información principal */}
+        {/* NUEVO: Información principal usando el mismo estilo de tarjetas que historial */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
           <div className="space-y-6">
-            {/* Card principal */}
+            {/* Card principal con imagen */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
               {/* Imagen de la sala */}
               <div className="h-64 bg-gradient-to-br from-blue-400 to-blue-600 relative">
@@ -272,13 +271,13 @@ export default function DetalleSalaPage() {
                     />
                   </svg>
                 </div>
-                {/* Badge de estado */}
+                {/* Badge de estado en esquina superior derecha */}
                 <div className="absolute top-4 right-4">
                   <span
-                    className={`px-3 py-1 text-sm font-semibold rounded-full ${
+                    className={`px-2 py-1 text-xs font-medium rounded-full ${
                       sala.disponible
-                        ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
-                        : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100"
+                        ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                        : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
                     }`}
                   >
                     {sala.disponible ? "Disponible" : "No disponible"}
@@ -286,37 +285,46 @@ export default function DetalleSalaPage() {
                 </div>
               </div>
 
-              {/* Contenido */}
+              {/* Contenido de la sala */}
               <div className="p-6">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
                   {sala.nombreSala}
                 </h2>
 
-                {/* Información básica */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                {/* Información básica usando grid como en historial */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                   <div className="flex items-center text-gray-600 dark:text-gray-400">
-                    <MapPinIcon className="h-5 w-5 mr-3 text-blue-500" />
+                    <MapPinIcon className="h-4 w-4 mr-2 text-blue-500" />
                     <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      <p className="text-xs font-medium text-gray-900 dark:text-gray-100">
                         Ubicación
                       </p>
-                      <p>{sala.ubicacion || "No especificada"}</p>
+                      <p className="text-sm">{sala.ubicacion || "No especificada"}</p>
                     </div>
                   </div>
 
                   <div className="flex items-center text-gray-600 dark:text-gray-400">
-                    <UsersIcon className="h-5 w-5 mr-3 text-blue-500" />
+                    <UsersIcon className="h-4 w-4 mr-2 text-blue-500" />
                     <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      <p className="text-xs font-medium text-gray-900 dark:text-gray-100">
                         Capacidad
                       </p>
-                      <p>{sala.capacidadMax} personas</p>
+                      <p className="text-sm">{sala.capacidadMax} personas</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center text-gray-600 dark:text-gray-400">
+                    <CalendarIcon className="h-4 w-4 mr-2 text-blue-500" />
+                    <div>
+                      <p className="text-xs font-medium text-gray-900 dark:text-gray-100">
+                        Fecha de creación
+                      </p>
+                      <p className="text-sm">{formatearFecha(sala.fechaCreacion)}</p>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-            {/* ESTADO DE EQUIPAMIENTO AQUI ADAN*/}
           </div>
         </div>
       </div>
