@@ -4,6 +4,17 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
+import {
+  CalendarIcon,
+  HomeIcon,
+  CogIcon,
+  ClipboardDocumentListIcon,
+  BuildingOfficeIcon,
+  UserGroupIcon,
+  DocumentTextIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+} from "@heroicons/react/24/outline";
 
 type User = {
   id: number;
@@ -13,11 +24,22 @@ type User = {
   apellidos: string;
 };
 
+const navigation = [
+  { name: "Dashboard", href: "/", icon: HomeIcon },
+  { name: "Calendario", href: "/dashboard/calendario", icon: CalendarIcon },
+  { name: "Solicitudes", href: "/dashboard/solicitudes", icon: DocumentTextIcon },
+  { name: "Conferencias", href: "/dashboard/conferencia", icon: ClipboardDocumentListIcon },
+  { name: "Salas", href: "/dashboard/salas-tecnico", icon: BuildingOfficeIcon },
+  { name: "Usuarios", href: "/dashboard/usuarios", icon: UserGroupIcon },
+  { name: "Configuración", href: "/dashboard/configuracion", icon: CogIcon },
+];
+
 export default function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
@@ -60,121 +82,87 @@ export default function Sidebar() {
     router.push("/login");
   };
 
-  const menuItems = [
-    {
-      icon: "🏠",
-      label: "Inicio",
-      href: "/dashboard"
-    },
-    {
-      icon: "📅",
-      label: "Calendario",
-      href: "/dashboard/calendario"
-    },
-    {
-      icon: "📋",
-      label: "Mis Solicitudes",
-      href: "/dashboard/reservas"
-    },
-    {
-      icon: "🏢",
-      label: "Salas",
-      href: "/dashboard/salas"
-    }
-  ];
-
-  const isActive = (href: string) => pathname === href;
   const isLoginPage = pathname === "/login";
 
-  //Si no hay usuario, no mostrar el sidebar
-//   if ((!user && !loading) || isLoginPage) {
-//     return null;
-//   }
-    if (isLoginPage) {
+  if (isLoginPage) {
     return null;
+  }
+
+  // Función para determinar si una ruta está activa
+  const isRouteActive = (href: string) => {
+    if (href === "/dashboard") {
+      // Para el dashboard, solo debe estar activo si es exactamente /dashboard
+      return pathname === "/dashboard";
+    } else {
+      // Para otras rutas, debe empezar con la ruta específica
+      return pathname === href || pathname.startsWith(href + '/');
     }
+  };
 
   return (
-    <div className="fixed left-0 top-0 h-full w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex flex-col z-50">
-      {/* Logo y Header */}
-      <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-        <div className="flex items-center gap-3">
-          <img
-            src="https://sic.cultura.gob.mx/images/62215"
-            alt="Logo CICESE"
-            width={32}
-            height={32}
-            className="dark:invert"
-          />
-          <span className="font-semibold text-gray-900 dark:text-white">
-            CICESE
-          </span>
-        </div>
-      </div>
+    <div className={`fixed left-0 top-0 h-full ${isCollapsed ? 'w-16' : 'w-64'} bg-white dark:bg-gray-800 shadow-lg transition-all duration-300 ease-in-out z-50`}>
+      {/* Toggle button */}
+      <button
+        onClick={() => setIsCollapsed(!isCollapsed)}
+        className="absolute -right-3 top-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full p-1.5 shadow-md hover:shadow-lg transition-shadow z-10"
+      >
+        {isCollapsed ? (
+          <ChevronRightIcon className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+        ) : (
+          <ChevronLeftIcon className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+        )}
+      </button>
 
-      {/* Navegación Principal */}
-      <nav className="flex-1 p-4">
-        <ul className="space-y-2">
-          {menuItems.map((item) => (
-            <li key={item.href}>
-              <Link
-                href={item.href}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-                  isActive(item.href)
-                    ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-medium"
-                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
-                }`}
-              >
-                <span className="text-lg">{item.icon}</span>
-                <span>{item.label}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
-
-      {/* Sección de Soporte */}
-      <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-        <Link
-          href="/soporte"
-          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-        >
-          <span className="text-lg">❓</span>
-          <span>Soporte</span>
-        </Link>
-      </div>
-
-      {/* Usuario y Logout */}
-      <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-        {loading ? (
-          <div className="text-sm text-gray-500">Cargando...</div>
-        ) : user ? (
-          <div className="space-y-3">
-            {/* Info del Usuario */}
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                {user.nombre.charAt(0).toUpperCase()}
+      <div className="flex flex-col h-full">
+        {/* Logo */}
+        <div className="flex-shrink-0 flex items-center px-4 py-6">
+          {!isCollapsed ? (
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <CalendarIcon className="h-8 w-8 text-blue-600" />
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                  {user.nombre} {user.apellidos}
+              <div className="ml-3">
+                <p className="text-xl font-bold text-gray-900 dark:text-white">
+                  CICESE
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                  {user.email}
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Reservaciones
                 </p>
               </div>
             </div>
-            
-            {/* Botón Cerrar Sesión */}
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-            >
-              <span>🚪</span>
-              <span>Cerrar Sesión</span>
-            </button>
-          </div>
-        ) : null}
+          ) : (
+            <CalendarIcon className="h-8 w-8 text-blue-600 mx-auto" />
+          )}
+        </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 px-2 py-4 space-y-2">
+          {navigation.map((item) => {
+            const isActive = isRouteActive(item.href);
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors ${
+                  isActive
+                    ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                }`}
+                title={isCollapsed ? item.name : undefined}
+              >
+                <item.icon
+                  className={`${isCollapsed ? 'mx-auto' : 'mr-3'} flex-shrink-0 h-5 w-5 ${
+                    isActive
+                      ? 'text-blue-500 dark:text-blue-400'
+                      : 'text-gray-400 dark:text-gray-500 group-hover:text-gray-500 dark:group-hover:text-gray-400'
+                  }`}
+                  aria-hidden="true"
+                />
+                {!isCollapsed && item.name}
+              </Link>
+            );
+          })}
+        </nav>
       </div>
     </div>
   );
