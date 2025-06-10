@@ -63,6 +63,13 @@ export const useAuth = () => {
     }
   };
 
+  const getUserId = (): number | null => {
+    if (!authState.isAuthenticated || !authState.user) {
+      return null;
+    }
+    return authState.user.id;
+  };
+
   const refreshToken = async () => {
     const refreshToken = Cookies.get('refresh_token');
     if (!refreshToken) {
@@ -128,5 +135,6 @@ export const useAuth = () => {
     logout: handleLogout,
     refreshToken,
     checkAuth,
+    getUserId,
   };
 };

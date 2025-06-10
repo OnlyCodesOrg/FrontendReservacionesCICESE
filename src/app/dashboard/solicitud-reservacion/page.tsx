@@ -3,6 +3,9 @@
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Cookies from 'js-cookie';
+import { AuthGuard } from "@/components/AuthGuard";
+import { useAuth } from "@/hooks/useAuth";
 
 // Tipos TypeScript
 interface Participante {
@@ -28,6 +31,11 @@ interface ServiciosRequeridos {
   wifi: boolean;
 }
 
+interface Asistente {
+  nombre: string;
+  correo: string;
+}
+
 interface FormData {
   nombreCompleto: string;
   correo: string;
@@ -40,13 +48,25 @@ interface FormData {
   numeroParticipantes: string;
   equipoRequerido: EquipoRequerido;
   serviciosRequeridos: ServiciosRequeridos;
-  participantes: Participante[];
+  asistentes: Asistente[];
+}
+
+interface FormErrors {
+  nombreCompleto?: string;
+  correo?: string;
+  nombreEvento?: string;
+  tipoEvento?: string;
+  fechaEvento?: string;
+  horaInicio?: string;
+  horaFinalizacion?: string;
+  numeroParticipantes?: string;
 }
 
 function SolicitudReservacionForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const fecha = searchParams.get("fecha") || "";
+  const { user, getUserId } = useAuth();
   const [formData, setFormData] = useState<FormData>({
     nombreCompleto: "",
     correo: "",
@@ -73,45 +93,25 @@ function SolicitudReservacionForm() {
       microfono: false,
       wifi: false,
     },
-    participantes: [{ nombre: "", correo: "" }],
+    asistentes: [{ nombre: "", correo: "" }],
   });
-  const [userId, setUserId] = useState<number | null>(null);
+  const [formErrors, setFormErrors] = useState<FormErrors>({});
+
   useEffect(() => {
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || window.location.origin;
-    const token = localStorage.getItem("access_token");
-    if (!token) return;
-    fetch(`${API_URL}/auth/profile`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    })
-      .then(async (res) => {
-        if (!res.ok) {
-          console.warn("Perfil no válido, forzando logout");
-          localStorage.removeItem("access_token");
-          return;
-        }
-        const data = await res.json();
-        const user = data.user; // { id, email, id_rol, nombre, apellidos, id_departamento }
-        setUserId(user.userId);
-        const nombreCompleto = [user.nombre, user.apellidos]
-          .filter((x: string) => x)
-          .join(" ");
-        const departamentoId = user.id_departamento?.toString() || "";
-        setFormData((prev) => ({
-          ...prev,
-          nombreCompleto,
-          correo: user.email,
-          departamento: departamentoId,
-        }));
-      })
-      .catch((err) => {
-        console.error("Error fetch /auth/profile:", err);
-        localStorage.removeItem("access_token");
-      });
-  }, []);
+    if (user) {
+      const nombreCompleto = [user.nombre, user.apellidos]
+        .filter((x: string) => x)
+        .join(" ");
+      const departamentoId = user.departamento?.id.toString() || "";
+      setFormData((prev) => ({
+        ...prev,
+        nombreCompleto,
+        correo: user.email,
+        departamento: departamentoId,
+      }));
+    }
+  }, [user]);
+
   const handleInputChange = (field: keyof FormData, value: any) => {
     setFormData((prev) => ({
       ...prev,
@@ -175,72 +175,111 @@ function SolicitudReservacionForm() {
   const addParticipante = () => {
     setFormData((prev) => ({
       ...prev,
-      participantes: [...prev.participantes, { nombre: "", correo: "" }],
+      asistentes: [...prev.asistentes, { nombre: "", correo: "" }],
     }));
   };
 
   const removeParticipante = (index: number) => {
     setFormData((prev) => ({
       ...prev,
-      participantes: prev.participantes.filter((_, i) => i !== index),
+      asistentes: prev.asistentes.filter((_, i) => i !== index),
     }));
   };
 
   const updateParticipante = (
     index: number,
-    field: keyof Participante,
+    field: keyof Asistente,
     value: string
   ) => {
-    setFormData((prev) => ({
-      ...prev,
-      participantes: prev.participantes.map((p, i) =>
-        i === index ? { ...p, [field]: value } : p
-      ),
-    }));
+    setFormData((prev) => {
+      const newAsistentes = [...prev.asistentes];
+      newAsistentes[index] = {
+        ...newAsistentes[index],
+        [field]: value,
+      };
+      return {
+        ...prev,
+        asistentes: newAsistentes,
+      };
+    });
   };
-  const handleSiguiente = () => {
-    // Validaciones básicas
+
+  const validateForm = (): boolean => {
+    const errors: FormErrors = {};
+    let isValid = true;
+
     if (!formData.nombreCompleto.trim()) {
-      alert("Por favor ingresa tu nombre completo");
-      return;
+      errors.nombreCompleto = "El nombre completo es requerido";
+      isValid = false;
     }
+
     if (!formData.correo.trim()) {
-      alert("Por favor ingresa tu correo");
-      return;
+      errors.correo = "El correo es requerido";
+      isValid = false;
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.correo)) {
+      errors.correo = "Por favor ingresa un correo válido";
+      isValid = false;
     }
+
     if (!formData.nombreEvento.trim()) {
-      alert("Por favor ingresa el nombre del evento");
-      return;
+      errors.nombreEvento = "El nombre del evento es requerido";
+      isValid = false;
     }
+
     if (!formData.tipoEvento) {
-      alert("Por favor selecciona el tipo de evento");
-      return;
+      errors.tipoEvento = "El tipo de evento es requerido";
+      isValid = false;
     }
+
     if (!formData.fechaEvento) {
-      alert("Por favor selecciona la fecha del evento");
-      return;
+      errors.fechaEvento = "La fecha del evento es requerida";
+      isValid = false;
     }
+
     if (!formData.horaInicio) {
-      alert("Por favor selecciona la hora de inicio");
-      return;
+      errors.horaInicio = "La hora de inicio es requerida";
+      isValid = false;
     }
+
     if (!formData.horaFinalizacion) {
-      alert("Por favor selecciona la hora de finalización");
-      return;
+      errors.horaFinalizacion = "La hora de finalización es requerida";
+      isValid = false;
     }
+
     if (!formData.numeroParticipantes) {
-      alert("Por favor selecciona el número de participantes");
-      return;
+      errors.numeroParticipantes = "El número de participantes es requerido";
+      isValid = false;
     }
 
-    // Guardar los datos en localStorage para pasarlos a la siguiente página
-    localStorage.setItem('solicitudReservacion', JSON.stringify({
-      formData,
-      userId
-    }));
+    setFormErrors(errors);
+    return isValid;
+  };
 
-    // Navegar a la página de confirmación
-    router.push('/confirmar-solicitud');
+  const handleSiguiente = () => {
+    if (validateForm()) {
+      // Default sala data
+      const defaultSala = {
+        id: 1,
+        nombreSala: "Sala Principal",
+        ubicacion: "Edificio A - Primer Piso",
+        capacidadMax: 50,
+        disponible: true,
+        equipamiento: ["Proyector", "WiFi", "Sistema de Audio"]
+      };
+
+      const currentUserId = getUserId();
+      if (!currentUserId) {
+        alert("Error: No hay usuario logueado");
+        return;
+      }
+
+      localStorage.setItem('solicitudReservacion', JSON.stringify({
+        formData,
+        userId: currentUserId,
+        salaSeleccionada: defaultSala
+      }));
+      router.push('/dashboard/confirmar-solicitud');
+    }
   };
 
   return (
@@ -260,12 +299,22 @@ function SolicitudReservacionForm() {
                   <input
                     type="text"
                     value={formData.nombreCompleto}
-                    onChange={(e) =>
-                      handleInputChange("nombreCompleto", e.target.value)
-                    }
+                    onChange={(e) => {
+                      handleInputChange("nombreCompleto", e.target.value);
+                      if (formErrors.nombreCompleto) {
+                        setFormErrors(prev => ({ ...prev, nombreCompleto: undefined }));
+                      }
+                    }}
                     placeholder="Nombre del Solicitante"
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white ${
+                      formErrors.nombreCompleto 
+                        ? 'border-red-500 focus:ring-red-500' 
+                        : 'border-gray-300 dark:border-gray-600'
+                    }`}
                   />
+                  {formErrors.nombreCompleto && (
+                    <p className="mt-1 text-sm text-red-600">{formErrors.nombreCompleto}</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -274,12 +323,22 @@ function SolicitudReservacionForm() {
                   <input
                     type="email"
                     value={formData.correo}
-                    onChange={(e) =>
-                      handleInputChange("correo", e.target.value)
-                    }
+                    onChange={(e) => {
+                      handleInputChange("correo", e.target.value);
+                      if (formErrors.correo) {
+                        setFormErrors(prev => ({ ...prev, correo: undefined }));
+                      }
+                    }}
                     placeholder="Correo del Solicitante"
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white ${
+                      formErrors.correo 
+                        ? 'border-red-500 focus:ring-red-500' 
+                        : 'border-gray-300 dark:border-gray-600'
+                    }`}
                   />
+                  {formErrors.correo && (
+                    <p className="mt-1 text-sm text-red-600">{formErrors.correo}</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -313,12 +372,22 @@ function SolicitudReservacionForm() {
                   <input
                     type="text"
                     value={formData.nombreEvento}
-                    onChange={(e) =>
-                      handleInputChange("nombreEvento", e.target.value)
-                    }
+                    onChange={(e) => {
+                      handleInputChange("nombreEvento", e.target.value);
+                      if (formErrors.nombreEvento) {
+                        setFormErrors(prev => ({ ...prev, nombreEvento: undefined }));
+                      }
+                    }}
                     placeholder="Nombre del Evento"
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white ${
+                      formErrors.nombreEvento 
+                        ? 'border-red-500 focus:ring-red-500' 
+                        : 'border-gray-300 dark:border-gray-600'
+                    }`}
                   />
+                  {formErrors.nombreEvento && (
+                    <p className="mt-1 text-sm text-red-600">{formErrors.nombreEvento}</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -326,10 +395,17 @@ function SolicitudReservacionForm() {
                   </label>
                   <select
                     value={formData.tipoEvento}
-                    onChange={(e) =>
-                      handleInputChange("tipoEvento", e.target.value)
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    onChange={(e) => {
+                      handleInputChange("tipoEvento", e.target.value);
+                      if (formErrors.tipoEvento) {
+                        setFormErrors(prev => ({ ...prev, tipoEvento: undefined }));
+                      }
+                    }}
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white ${
+                      formErrors.tipoEvento 
+                        ? 'border-red-500 focus:ring-red-500' 
+                        : 'border-gray-300 dark:border-gray-600'
+                    }`}
                   >
                     <option value="">Seleccionar</option>
                     <option value="Reunion">Reunión</option>
@@ -339,6 +415,9 @@ function SolicitudReservacionForm() {
                     <option value="Conferencia">Conferencia</option>
                     <option value="Otro">Otro</option>
                   </select>
+                  {formErrors.tipoEvento && (
+                    <p className="mt-1 text-sm text-red-600">{formErrors.tipoEvento}</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -347,11 +426,21 @@ function SolicitudReservacionForm() {
                   <input
                     type="date"
                     value={formData.fechaEvento}
-                    onChange={(e) =>
-                      handleInputChange("fechaEvento", e.target.value)
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    onChange={(e) => {
+                      handleInputChange("fechaEvento", e.target.value);
+                      if (formErrors.fechaEvento) {
+                        setFormErrors(prev => ({ ...prev, fechaEvento: undefined }));
+                      }
+                    }}
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white ${
+                      formErrors.fechaEvento 
+                        ? 'border-red-500 focus:ring-red-500' 
+                        : 'border-gray-300 dark:border-gray-600'
+                    }`}
                   />
+                  {formErrors.fechaEvento && (
+                    <p className="mt-1 text-sm text-red-600">{formErrors.fechaEvento}</p>
+                  )}
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -361,11 +450,21 @@ function SolicitudReservacionForm() {
                     <input
                       type="time"
                       value={formData.horaInicio}
-                      onChange={(e) =>
-                        handleInputChange("horaInicio", e.target.value)
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                      onChange={(e) => {
+                        handleInputChange("horaInicio", e.target.value);
+                        if (formErrors.horaInicio) {
+                          setFormErrors(prev => ({ ...prev, horaInicio: undefined }));
+                        }
+                      }}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white ${
+                        formErrors.horaInicio 
+                          ? 'border-red-500 focus:ring-red-500' 
+                          : 'border-gray-300 dark:border-gray-600'
+                      }`}
                     />
+                    {formErrors.horaInicio && (
+                      <p className="mt-1 text-sm text-red-600">{formErrors.horaInicio}</p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -374,11 +473,21 @@ function SolicitudReservacionForm() {
                     <input
                       type="time"
                       value={formData.horaFinalizacion}
-                      onChange={(e) =>
-                        handleInputChange("horaFinalizacion", e.target.value)
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                      onChange={(e) => {
+                        handleInputChange("horaFinalizacion", e.target.value);
+                        if (formErrors.horaFinalizacion) {
+                          setFormErrors(prev => ({ ...prev, horaFinalizacion: undefined }));
+                        }
+                      }}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white ${
+                        formErrors.horaFinalizacion 
+                          ? 'border-red-500 focus:ring-red-500' 
+                          : 'border-gray-300 dark:border-gray-600'
+                      }`}
                     />
+                    {formErrors.horaFinalizacion && (
+                      <p className="mt-1 text-sm text-red-600">{formErrors.horaFinalizacion}</p>
+                    )}
                   </div>
                 </div>
                 <div>
@@ -387,10 +496,17 @@ function SolicitudReservacionForm() {
                   </label>
                   <select
                     value={formData.numeroParticipantes}
-                    onChange={(e) =>
-                      handleInputChange("numeroParticipantes", e.target.value)
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    onChange={(e) => {
+                      handleInputChange("numeroParticipantes", e.target.value);
+                      if (formErrors.numeroParticipantes) {
+                        setFormErrors(prev => ({ ...prev, numeroParticipantes: undefined }));
+                      }
+                    }}
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white ${
+                      formErrors.numeroParticipantes 
+                        ? 'border-red-500 focus:ring-red-500' 
+                        : 'border-gray-300 dark:border-gray-600'
+                    }`}
                   >
                     <option value="">Seleccionar</option>
                     <option value="1-10">1-10</option>
@@ -399,6 +515,9 @@ function SolicitudReservacionForm() {
                     <option value="26-50">26-50</option>
                     <option value="50+">50+</option>
                   </select>
+                  {formErrors.numeroParticipantes && (
+                    <p className="mt-1 text-sm text-red-600">{formErrors.numeroParticipantes}</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -500,68 +619,98 @@ function SolicitudReservacionForm() {
               </h2>
 
               <div className="space-y-4">
-                {formData.participantes.map((participante, index) => (
+                {formData.asistentes.map((asistente: Asistente, index: number) => (
                   <div
                     key={index}
-                    className="border border-gray-200 dark:border-gray-600 rounded-lg p-4"
+                    className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg relative"
                   >
                     <div className="flex justify-between items-center mb-4">
-                      <h4 className="font-medium text-gray-700 dark:text-gray-300">
+                      <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">
                         Participante {index + 1}
                       </h4>
-                      {formData.participantes.length > 1 && (
+                      {formData.asistentes.length > 1 && (
                         <button
                           onClick={() => removeParticipante(index)}
-                          className="px-3 py-1 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded-md hover:bg-red-200 dark:hover:bg-red-800 transition-colors text-sm flex items-center space-x-1"
+                          className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
                         >
-                          <span>🗑️</span>
-                          <span>Eliminar</span>
+                          <span className="sr-only">Eliminar participante</span>
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M6 18L18 6M6 6l12 12"
+                            />
+                          </svg>
                         </button>
                       )}
                     </div>
-
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Nombre del Participante
+                          Nombre
                         </label>
                         <input
                           type="text"
-                          value={participante.nombre}
+                          value={asistente.nombre}
                           onChange={(e) =>
                             updateParticipante(index, "nombre", e.target.value)
                           }
-                          placeholder="Nombre del Participante"
+                          placeholder="Nombre del participante"
                           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                         />
                       </div>
-
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Correo de Participante
+                          Correo
                         </label>
                         <input
                           type="email"
-                          value={participante.correo}
+                          value={asistente.correo}
                           onChange={(e) =>
                             updateParticipante(index, "correo", e.target.value)
                           }
-                          placeholder="correo@ejemplo.com"
+                          placeholder="Correo del participante"
                           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                         />
                       </div>
                     </div>
                   </div>
                 ))}
+                <button
+                  type="button"
+                  onClick={addParticipante}
+                  className="w-full px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
+                >
+                  + Agregar otro participante
+                </button>
+              </div>
 
-                <div className="flex justify-between items-center pt-4">
-                  <button
-                    onClick={addParticipante}
-                    className="px-4 py-2 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-md hover:bg-green-200 dark:hover:bg-green-800 transition-colors text-sm"
-                  >
-                    + Agregar Otro Participante
-                  </button>
-                </div>
+              <div className="mt-6">
+                <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                  Participantes Adicionales
+                </h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {formData.asistentes.filter((a: Asistente) => a.nombre).length > 0 ? (
+                    formData.asistentes
+                      .filter((a: Asistente) => a.nombre)
+                      .map((asistente: Asistente, index: number) => (
+                        <span
+                          key={index}
+                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-2 mb-2"
+                        >
+                          {asistente.nombre}
+                        </span>
+                      ))
+                  ) : (
+                    "No hay participantes adicionales"
+                  )}
+                </p>
               </div>
             </div>
             <div className="flex justify-end">
@@ -665,10 +814,10 @@ function SolicitudReservacionForm() {
                   <p className="font-semibold mb-1 text-orange-900 dark:text-orange-100">
                     Participantes Adicionales
                   </p>
-                  {formData.participantes.filter((p) => p.nombre).length > 0 ? (
-                    formData.participantes
-                      .filter((p) => p.nombre)
-                      .map((participante, index) => (
+                  {formData.asistentes.filter((p: Asistente) => p.nombre).length > 0 ? (
+                    formData.asistentes
+                      .filter((p: Asistente) => p.nombre)
+                      .map((participante: Asistente, index: number) => (
                         <p key={index} className="text-xs">
                           • {participante.nombre}
                         </p>
