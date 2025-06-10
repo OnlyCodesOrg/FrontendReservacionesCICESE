@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Cookies from 'js-cookie';
 
 // Tipos para la respuesta de la API
 interface AuthResponse {
@@ -48,6 +47,7 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
+    console.log("Iniciando login...");
 
     // Validación mínima en el frontend
     if (!email.trim() || !password.trim()) {
@@ -57,6 +57,7 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
+      console.log("Enviando petición al servidor...");
       const res = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
         headers: {
@@ -66,23 +67,26 @@ export default function LoginPage() {
           email: email.trim(),
           contraseña: password,
         }),
-        credentials: 'include', // Importante para cookies
       });
 
+      console.log("Respuesta recibida:", res.status);
       const data: AuthResponse = await res.json();
+      console.log("Datos recibidos:", data);
 
       if (!res.ok || !data.success) {
+        console.log("Error en login:", data.message);
         setErrorMessage(data.message || "Ocurrió un error inesperado.");
         setLoading(false);
         return;
       }
 
-      // Guardar tokens en cookies
-      Cookies.set('access_token', data.data.access_token, { expires: 1 }); // Expira en 1 día
-      Cookies.set('refresh_token', data.data.refresh_token, { expires: 7 }); // Expira en 7 días
+      console.log("Login exitoso, guardando token...");
+      // Guardar token en localStorage
+      localStorage.setItem('access_token', data.data.access_token);
+      localStorage.setItem('refresh_token', data.data.refresh_token);
 
-      // Guardar información del usuario
-      Cookies.set('user', JSON.stringify({
+      // Guardar información del usuario en localStorage
+      localStorage.setItem('user', JSON.stringify({
         id: data.data.user.id,
         email: data.data.user.email,
         nombre: data.data.user.nombre,
@@ -90,6 +94,9 @@ export default function LoginPage() {
         rol: data.data.user.rol,
         departamento: data.data.user.departamento,
       }));
+
+      console.log("Token guardado:", localStorage.getItem('access_token'));
+      console.log("Redirigiendo...");
 
       // Redirigir según el rol del usuario
       if (data.data.user.rol.nombre.toLowerCase().includes('admin')) {

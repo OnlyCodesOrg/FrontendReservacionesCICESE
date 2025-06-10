@@ -205,7 +205,7 @@ export default function ConferenciaDetalle({ params }: { params: { id: string } 
 
   if (authLoading || loading) {
     return (
-      <div className="ml-64 min-h-screen flex items-center justify-center">
+      <div className="ml-64 min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
           <p className="mt-4 text-gray-600 dark:text-gray-400">
@@ -218,7 +218,7 @@ export default function ConferenciaDetalle({ params }: { params: { id: string } 
 
   if (error) {
     return (
-      <div className="ml-64 min-h-screen flex items-center justify-center">
+      <div className="ml-64 min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="text-red-500 text-xl mb-4">⚠️</div>
           <p className="text-gray-600 dark:text-gray-400">{error}</p>
@@ -243,8 +243,8 @@ export default function ConferenciaDetalle({ params }: { params: { id: string } 
   return (
     <>
       <Toaster position="top-right" />
-      <div className="ml-64 min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
-        <div className="container mx-auto px-4">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <Link 
             href="/dashboard/solicitudes" 
             className="inline-flex items-center mb-6 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
@@ -254,31 +254,31 @@ export default function ConferenciaDetalle({ params }: { params: { id: string } 
 
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
             {/* Encabezado de la conferencia */}
-            <div className={`${conferencia.color} px-6 py-4 text-white`}>
-              <div className="flex justify-between items-start">
+            <div className={`${conferencia.color} px-6 py-6 text-white`}>
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
                 <div className="flex-1">
-                  <h1 className="text-2xl md:text-3xl font-bold">{conferencia.titulo}</h1>
+                  <h1 className="text-2xl lg:text-3xl font-bold">{conferencia.titulo}</h1>
                   <p className="mt-1 text-white/90">ID: {conferencia.numeroReservacion}</p>
-                  <div className="mt-2 flex items-center flex-wrap gap-4">
-                    <span>
+                  <div className="mt-3 flex items-center flex-wrap gap-4">
+                    <span className="text-sm sm:text-base">
                       {format(fechaInicio, "EEEE d 'de' MMMM 'de' yyyy", { locale: es })}
                     </span>
-                    <span className="bg-white/20 px-2 py-1 rounded text-sm">
+                    <span className="bg-white/20 px-3 py-1 rounded text-sm">
                       {format(fechaInicio, "HH:mm")} - {format(fechaFin, "HH:mm")}
                     </span>
                   </div>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${getEstadoColor(conferencia.estado)}`}>
+                <span className={`px-3 py-1 rounded-full text-sm font-medium ${getEstadoColor(conferencia.estado)} self-start sm:self-center`}>
                   {getEstadoTexto(conferencia.estado)}
                 </span>
               </div>
             </div>
 
             {/* Contenido principal */}
-            <div className="p-6">
-              <div className="grid md:grid-cols-3 gap-8">
+            <div className="p-6 sm:p-8">
+              <div className="grid lg:grid-cols-3 gap-8 lg:gap-12">
                 {/* Columna 1: Información básica */}
-                <div className="col-span-2">
+                <div className="lg:col-span-2">
                   <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Descripción</h2>
                   <p className="text-gray-600 dark:text-gray-300 mb-6">
                     {conferencia.descripcion}
@@ -346,8 +346,8 @@ export default function ConferenciaDetalle({ params }: { params: { id: string } 
                 </div>
 
                 {/* Columna 2: Detalles y Acciones */}
-                <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                  <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Detalles del Evento</h2>
+                <div className="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg h-fit">
+                  <h2 className="text-lg font-semibold mb-6 text-gray-900 dark:text-white">Detalles del Evento</h2>
                   
                   <div className="space-y-4">
                     <div>

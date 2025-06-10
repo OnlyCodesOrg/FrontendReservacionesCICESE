@@ -18,11 +18,12 @@ import {
 } from "@heroicons/react/24/outline";
 
 type User = {
-  id: number;
+  sub: number;
   email: string;
-  id_rol: number;
+  idRol: number;
   nombre: string;
   apellidos: string;
+  id_departamento: number;
 };
 
 const navigation = [
@@ -46,8 +47,12 @@ export default function Sidebar() {
 
   useEffect(() => {
     const token = localStorage.getItem("access_token");
+    
     if (!token) {
       setLoading(false);
+      if (pathname !== '/auth/login') {
+        router.push('/auth/login');
+      }
       return;
     }
 
@@ -59,23 +64,33 @@ export default function Sidebar() {
       },
     })
       .then(async (res) => {
+        
         if (!res.ok) {
           localStorage.removeItem("access_token");
           setUser(null);
           setLoading(false);
+          router.push('/auth/login');
           return;
         }
-        const data = await res.json();
-        setUser(data.user);
+        
+        const response = await res.json();
+        
+        if (response.success && response.data) {
+          setUser(response.data);
+        } else {
+          setUser(null);
+          router.push('/auth/login');
+        }
       })
-      .catch(() => {
+      .catch((error) => {
         localStorage.removeItem("access_token");
         setUser(null);
+        router.push('/auth/login');
       })
       .finally(() => {
         setLoading(false);
       });
-  }, [API_URL]);
+  }, [API_URL, pathname, router]);
 
   const handleLogout = () => {
     localStorage.removeItem("access_token");
@@ -117,7 +132,7 @@ export default function Sidebar() {
         )}
       </button>
 
-      <div className="flex flex-col h-full overflow-y-auto">
+      <div className="flex flex-col h-full">
         {/* Logo */}
         <div className="flex-shrink-0 flex items-center h-16 px-4">
           {!isCollapsed ? (
@@ -140,7 +155,7 @@ export default function Sidebar() {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 space-y-1 px-2 py-4">
+        <nav className="flex-1 px-2 py-4">
           {navigation.map((item) => {
             const isActive = isRouteActive(item.href);
             return (
@@ -170,34 +185,40 @@ export default function Sidebar() {
 
         {/* User section */}
         {!loading && user && (
-          <div className={`flex-shrink-0 flex border-t border-gray-200 dark:border-gray-700 p-4 ${
-            isCollapsed ? 'justify-center' : ''
-          }`}>
-            {!isCollapsed ? (
-              <div className="flex-shrink-0 w-full group block">
-                <div className="flex items-center">
-                  <div>
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">
-                      {user.nombre}
-                    </p>
-                    <button
-                      onClick={handleLogout}
-                      className="text-xs text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 mt-1"
-                    >
-                      Cerrar Sesión
-                    </button>
-                  </div>
+          <div className="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 p-4">
+            <div className="flex items-center">
+              {/* Avatar */}
+              <div className="flex-shrink-0">
+                <div className="h-10 w-10 rounded-full bg-blue-600 flex items-center justify-center">
+                  <span className="text-sm font-medium text-white">
+                    {user.email.charAt(0).toUpperCase()}
+                  </span>
                 </div>
               </div>
-            ) : (
+
+              {/* User info */}
+              {!isCollapsed && (
+                <div className="ml-3 flex-1">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                    {user.nombre} {user.apellidos}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                    {user.email}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Logout button */}
+            {!isCollapsed && (
               <button
                 onClick={handleLogout}
-                className="text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 p-2 rounded-md transition-colors"
-                title="Cerrar Sesión"
+                className="mt-3 flex w-full items-center text-sm text-red-600 hover:text-red-700"
               >
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013 3v1" />
                 </svg>
+                Cerrar Sesión
               </button>
             )}
           </div>

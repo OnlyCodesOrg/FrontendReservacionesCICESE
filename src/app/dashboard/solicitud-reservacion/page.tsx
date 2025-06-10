@@ -66,6 +66,13 @@ function SolicitudReservacionForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const fecha = searchParams.get("fecha") || "";
+  
+  // Parámetros de la sala seleccionada
+  const salaId = searchParams.get("salaId");
+  const salaNombre = searchParams.get("salaNombre");
+  const salaUbicacion = searchParams.get("salaUbicacion");
+  const salaCapacidad = searchParams.get("salaCapacidad");
+  
   const { user, getUserId } = useAuth();
   const [formData, setFormData] = useState<FormData>({
     nombreCompleto: "",
@@ -249,6 +256,9 @@ function SolicitudReservacionForm() {
     if (!formData.numeroParticipantes) {
       errors.numeroParticipantes = "El número de participantes es requerido";
       isValid = false;
+    } else if (salaCapacidad && parseInt(formData.numeroParticipantes) > parseInt(salaCapacidad)) {
+      errors.numeroParticipantes = `El número de participantes no puede exceder la capacidad de la sala (${salaCapacidad} personas)`;
+      isValid = false;
     }
 
     setFormErrors(errors);
@@ -257,8 +267,15 @@ function SolicitudReservacionForm() {
 
   const handleSiguiente = () => {
     if (validateForm()) {
-      // Default sala data
-      const defaultSala = {
+      // Usar datos de la sala seleccionada o datos por defecto
+      const salaSeleccionada = salaId ? {
+        id: parseInt(salaId),
+        nombreSala: salaNombre || "Sala Principal",
+        ubicacion: salaUbicacion || "Edificio A - Primer Piso",
+        capacidadMax: parseInt(salaCapacidad || "50"),
+        disponible: true,
+        equipamiento: ["Proyector", "WiFi", "Sistema de Audio"]
+      } : {
         id: 1,
         nombreSala: "Sala Principal",
         ubicacion: "Edificio A - Primer Piso",
@@ -276,7 +293,7 @@ function SolicitudReservacionForm() {
       localStorage.setItem('solicitudReservacion', JSON.stringify({
         formData,
         userId: currentUserId,
-        salaSeleccionada: defaultSala
+        salaSeleccionada
       }));
       router.push('/dashboard/confirmar-solicitud');
     }
@@ -285,6 +302,22 @@ function SolicitudReservacionForm() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
       <div className="container mx-auto px-4">
+        {salaId && (
+          <div className="mb-6 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700 rounded-lg p-4">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-indigo-700 dark:text-indigo-300">
+                  <span className="font-medium">Sala preseleccionada:</span> {salaNombre} - {salaUbicacion}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
@@ -767,6 +800,19 @@ function SolicitudReservacionForm() {
                     {formData.numeroParticipantes || "Sin especificar"}
                   </p>
                 </div>
+                {salaId && (
+                  <div className="border-l-4 border-indigo-500 pl-4">
+                    <p className="font-semibold mb-1 text-indigo-900 dark:text-indigo-100">
+                      Sala Seleccionada
+                    </p>
+                    <p className="font-medium">{salaNombre}</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">{salaUbicacion}</p>
+                    <p className="text-xs">Capacidad: {salaCapacidad} personas</p>
+                    <div className="mt-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
+                      ✓ Sala preseleccionada
+                    </div>
+                  </div>
+                )}
                 <div className="border-l-4 border-purple-500 pl-4">
                   <p className="font-semibold mb-1 text-purple-900 dark:text-purple-100">
                     Recursos Necesarios

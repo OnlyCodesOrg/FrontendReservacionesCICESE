@@ -17,7 +17,7 @@ export default function Home() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link
-                  href="/dashboard/solicitud-reservacion"
+                  href="/dashboard/salas"
                   className="inline-flex items-center justify-center px-6 py-3 text-base font-medium text-white bg-blue-900 hover:bg-blue-800 rounded-md shadow-sm transition-colors"
                 >
                   Nueva Reserva
