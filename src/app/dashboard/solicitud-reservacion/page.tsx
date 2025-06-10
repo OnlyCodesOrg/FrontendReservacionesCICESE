@@ -5,7 +5,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Cookies from 'js-cookie';
 import { AuthGuard } from "@/components/AuthGuard";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/context/AuthContext";
 
 // Tipos TypeScript
 interface Participante {

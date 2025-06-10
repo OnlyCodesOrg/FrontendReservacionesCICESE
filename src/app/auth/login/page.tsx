@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 
 // Tipos para la respuesta de la API
 interface AuthResponse {
@@ -29,6 +30,7 @@ interface AuthResponse {
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useAuth();
 
   // Estados de formulario
   const [email, setEmail] = useState("");
@@ -81,28 +83,21 @@ export default function LoginPage() {
       }
 
       console.log("Login exitoso, guardando token...");
-      // Guardar token en localStorage
-      localStorage.setItem('access_token', data.data.access_token);
-      localStorage.setItem('refresh_token', data.data.refresh_token);
+      // Usar el contexto de autenticación para manejar el login
+      login(
+        data.data.user,
+        data.data.access_token,
+        data.data.refresh_token
+      );
 
-      // Guardar información del usuario en localStorage
-      localStorage.setItem('user', JSON.stringify({
-        id: data.data.user.id,
-        email: data.data.user.email,
-        nombre: data.data.user.nombre,
-        apellidos: data.data.user.apellidos,
-        rol: data.data.user.rol,
-        departamento: data.data.user.departamento,
-      }));
-
-      console.log("Token guardado:", localStorage.getItem('access_token'));
+      console.log("Token guardado exitosamente");
       console.log("Redirigiendo...");
 
       // Redirigir según el rol del usuario
       if (data.data.user.rol.nombre.toLowerCase().includes('admin')) {
         router.push('/admin/dashboard');
       } else {
-        router.push('/');
+        router.push('/dashboard/salas');
       }
       
     } catch (error) {

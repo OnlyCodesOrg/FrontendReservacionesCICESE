@@ -126,7 +126,7 @@ export const useAuth = () => {
         user: null,
         loading: false,
       });
-      router.push('/auth/login');
+      router.push('/');
     }
   }, [router]);
 

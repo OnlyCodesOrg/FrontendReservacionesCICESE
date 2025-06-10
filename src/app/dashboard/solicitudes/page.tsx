@@ -8,7 +8,7 @@ import { es } from "date-fns/locale";
 import Cookies from "js-cookie";
 import ReservacionModal from "@/components/ReservacionModal";
 import { AuthGuard } from "@/components/AuthGuard";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/context/AuthContext";
 
 interface Solicitud {
   id: string;

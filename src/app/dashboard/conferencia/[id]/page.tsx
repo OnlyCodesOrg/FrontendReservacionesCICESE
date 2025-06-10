@@ -5,7 +5,7 @@ import { notFound, useRouter } from "next/navigation";
 import Link from "next/link";
 import { parseISO, format } from "date-fns";
 import { es } from "date-fns/locale";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/context/AuthContext";
 import { Toaster, toast } from "react-hot-toast";
 import Cookies from 'js-cookie';
 

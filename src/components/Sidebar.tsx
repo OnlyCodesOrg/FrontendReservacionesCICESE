@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
 import { useSidebar } from "@/context/SidebarContext";
+import { useAuth } from "@/context/AuthContext";
 import {
   CalendarIcon,
   HomeIcon,
@@ -32,73 +33,17 @@ const navigation = [
   { name: "Solicitudes", href: "/dashboard/solicitudes", icon: DocumentTextIcon },
   { name: "Conferencias", href: "/dashboard/conferencia", icon: ClipboardDocumentListIcon },
   { name: "Salas", href: "/dashboard/salas-tecnico", icon: BuildingOfficeIcon },
-  { name: "Usuarios", href: "/dashboard/usuarios", icon: UserGroupIcon },
-  { name: "Configuración", href: "/dashboard/configuracion", icon: CogIcon },
+  // { name: "Usuarios", href: "/dashboard/usuarios", icon: UserGroupIcon },
+  // { name: "Configuración", href: "/dashboard/configuracion", icon: CogIcon },
 ];
 
 export default function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
   const { isCollapsed, toggleSidebar } = useSidebar();
+  const { isAuthenticated, user, loading, logout } = useAuth();
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-
-  useEffect(() => {
-    const token = localStorage.getItem("access_token");
-    
-    if (!token) {
-      setLoading(false);
-      if (pathname !== '/auth/login') {
-        router.push('/auth/login');
-      }
-      return;
-    }
-
-    fetch(`${API_URL}/auth/profile`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    })
-      .then(async (res) => {
-        
-        if (!res.ok) {
-          localStorage.removeItem("access_token");
-          setUser(null);
-          setLoading(false);
-          router.push('/auth/login');
-          return;
-        }
-        
-        const response = await res.json();
-        
-        if (response.success && response.data) {
-          setUser(response.data);
-        } else {
-          setUser(null);
-          router.push('/auth/login');
-        }
-      })
-      .catch((error) => {
-        localStorage.removeItem("access_token");
-        setUser(null);
-        router.push('/auth/login');
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, [API_URL, pathname, router]);
-
-  const handleLogout = () => {
-    localStorage.removeItem("access_token");
-    setUser(null);
-    router.push("/login");
-  };
-
-  const isLoginPage = pathname === "/login";
+  const isLoginPage = pathname === "/auth/login";
 
   if (isLoginPage) {
     return null;
@@ -212,7 +157,7 @@ export default function Sidebar() {
             {/* Logout button */}
             {!isCollapsed && (
               <button
-                onClick={handleLogout}
+                onClick={logout}
                 className="mt-3 flex w-full items-center text-sm text-red-600 hover:text-red-700"
               >
                 <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
