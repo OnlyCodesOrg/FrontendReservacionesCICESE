@@ -211,7 +211,7 @@ export default function ConfirmarSolicitudPage() {
       localStorage.removeItem('solicitudReservacion');
 
       // Redirigir a la página de reservaciones
-      router.push('/dashboard/reservas');
+      router.push('/dashboard/solicitudes');
 
     } catch (error) {
 

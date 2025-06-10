@@ -5,7 +5,10 @@ import { useRouter } from "next/navigation";
 import { Search, Calendar, Clock, MapPin, Users, Eye, Filter, X } from "lucide-react";
 import { format, parseISO, isValid } from "date-fns";
 import { es } from "date-fns/locale";
+import Cookies from "js-cookie";
 import ReservacionModal from "@/components/ReservacionModal";
+import { AuthGuard } from "@/components/AuthGuard";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Solicitud {
   id: string;
@@ -14,6 +17,7 @@ interface Solicitud {
   fechaInicio: string;
   fechaFin: string;
   solicitante: {
+    id: number;
     nombre: string;
     email: string;
     departamento: string;
@@ -33,8 +37,9 @@ interface Solicitud {
   serviciosExtra?: string[];
 }
 
-export default function SolicitudesPage() {
+function SolicitudesContent() {
   const router = useRouter();
+  const { user, getUserId } = useAuth();
   const [solicitudes, setSolicitudes] = useState<Solicitud[]>([]);
   const [filteredSolicitudes, setFilteredSolicitudes] = useState<Solicitud[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -42,143 +47,81 @@ export default function SolicitudesPage() {
   const [selectedSolicitud, setSelectedSolicitud] = useState<Solicitud | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchSolicitudes = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+      const token = Cookies.get('access_token');
+      const userId = getUserId();
+
+      if (!token || !userId) {
+        throw new Error('No hay sesión activa');
+      }
+
+      const response = await fetch(`${API_URL}/reservaciones/historial/${userId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al obtener las solicitudes');
+      }
+
+      const data = await response.json();
+      
+      // Transformar los datos de la API al formato que espera la interfaz
+      const solicitudesFormateadas: Solicitud[] = data.map((reservacion: any) => ({
+        id: reservacion.idReservacion.toString(),
+        numeroReservacion: reservacion.numeroSolicitud,
+        titulo: reservacion.nombreEvento,
+        fechaInicio: `${reservacion.fechaEvento}T${reservacion.horaInicio}`,
+        fechaFin: `${reservacion.fechaEvento}T${reservacion.horaFin}`,
+        solicitante: {
+          id: userId,
+          nombre: user?.nombre || '',
+          email: user?.email || '',
+          departamento: user?.departamento?.nombre || 'No especificado'
+        },
+        ubicacion: {
+          sala: reservacion.salaEvento,
+          edificio: 'CICESE',  // Este dato viene del backend?
+          piso: 'No especificado', // Este dato viene del backend?
+          capacidadMaxima: 0 // Este dato viene del backend?
+        },
+        participantes: 0, // Este dato viene del backend?
+        estado: reservacion.estadoActual.toLowerCase(),
+        fechaCreacion: new Date().toISOString(), // Este dato viene del backend?
+        descripcion: '',  // Este dato viene del backend?
+        equipoRequerido: [], // Este dato viene del backend?
+        serviciosExtra: []  // Este dato viene del backend?
+      }));
+
+      setSolicitudes(solicitudesFormateadas);
+      setFilteredSolicitudes(solicitudesFormateadas);
+    } catch (err) {
+      console.error('Error al obtener las solicitudes:', err);
+      setError(err instanceof Error ? err.message : 'Error al cargar las solicitudes');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // Datos hardcodeados de solicitudes
-    const solicitudesSimuladas: Solicitud[] = [
-      {
-        id: "1",
-        numeroReservacion: "SOL-2025001",
-        titulo: "Reunión de Avances Proyecto Marina",
-        fechaInicio: "2025-06-10T14:00:00",
-        fechaFin: "2025-06-10T16:00:00",
-        solicitante: {
-          nombre: "Dr. Eduardo Santamaría",
-          email: "eduardo.santamaria@cicese.mx",
-          departamento: "Oceanografía Biológica"
-        },
-        ubicacion: {
-          sala: "Sala de Conferencias B",
-          edificio: "Edificio Principal",
-          piso: "Piso 1",
-          capacidadMaxima: 20
-        },
-        participantes: 12,
-        estado: "pendiente",
-        fechaCreacion: "2025-06-01T10:30:00",
-        enlaceVideoconferencia: "https://teams.microsoft.com/l/meetup-join/19%3a...",
-        descripcion: "Reunión quincenal para revisar avances del proyecto de investigación sobre biodiversidad marina en el Golfo de California.",
-        equipoRequerido: ["Proyector", "Sistema de audio", "Pizarrón"],
-        serviciosExtra: ["Café", "Conexión a internet estable"]
-      },
-      {
-        id: "2",
-        numeroReservacion: "SOL-2025002",
-        titulo: "Seminario de Tesis Doctoral",
-        fechaInicio: "2025-06-15T09:00:00",
-        fechaFin: "2025-06-15T11:00:00",
-        solicitante: {
-          nombre: "Ana Lucía Morales",
-          email: "ana.morales@estudiante.cicese.mx",
-          departamento: "Geofísica Aplicada"
-        },
-        ubicacion: {
-          sala: "Aula Magna",
-          edificio: "Centro de Investigación",
-          piso: "Planta Baja",
-          capacidadMaxima: 80
-        },
-        participantes: 45,
-        estado: "aprobada",
-        fechaCreacion: "2025-05-28T16:45:00",
-        enlaceVideoconferencia: "https://zoom.us/j/987654321",
-        descripcion: "Presentación de avances de tesis doctoral sobre análisis sísmico en la región de Baja California.",
-        equipoRequerido: ["Proyector 4K", "Micrófono inalámbrico", "Sistema de grabación"],
-        serviciosExtra: ["Transmisión en vivo", "Grabación"]
-      },
-      {
-        id: "3",
-        numeroReservacion: "SOL-2025003",
-        titulo: "Workshop Técnicas de Muestreo",
-        fechaInicio: "2025-06-22T13:00:00",
-        fechaFin: "2025-06-22T17:00:00",
-        solicitante: {
-          nombre: "M.C. Roberto Velasco",
-          email: "roberto.velasco@cicese.mx",
-          departamento: "Ecología Marina"
-        },
-        ubicacion: {
-          sala: "Laboratorio de Prácticas",
-          edificio: "Edificio de Laboratorios",
-          piso: "Piso 2",
-          capacidadMaxima: 15
-        },
-        participantes: 14,
-        estado: "rechazada",
-        fechaCreacion: "2025-06-03T11:20:00",
-        descripcion: "Taller práctico sobre técnicas avanzadas de muestreo en ambientes marinos costeros.",
-        equipoRequerido: ["Equipo de laboratorio", "Microscopio", "Materiales de muestreo"],
-        serviciosExtra: ["Material de laboratorio", "Equipo de seguridad"]
-      },
-      {
-        id: "4",
-        numeroReservacion: "SOL-2025004",
-        titulo: "Conferencia Magistral: Cambio Climático",
-        fechaInicio: "2025-06-30T16:00:00",
-        fechaFin: "2025-06-30T18:00:00",
-        solicitante: {
-          nombre: "Dra. Carmen Jiménez",
-          email: "carmen.jimenez@cicese.mx",
-          departamento: "Climatología"
-        },
-        ubicacion: {
-          sala: "Auditorio Principal",
-          edificio: "Centro de Investigación",
-          piso: "Planta Baja",
-          capacidadMaxima: 200
-        },
-        participantes: 150,
-        estado: "aprobada",
-        fechaCreacion: "2025-06-05T14:15:00",
-        enlaceVideoconferencia: "https://meet.google.com/xyz-abc-def",
-        descripcion: "Conferencia magistral sobre los últimos hallazgos en investigación del cambio climático y su impacto en ecosistemas marinos.",
-        equipoRequerido: ["Sistema de audio profesional", "Proyector 4K", "Iluminación especial"],
-        serviciosExtra: ["Transmisión en vivo", "Traducción simultánea", "Refrigerio"]
-      },
-      {
-        id: "5",
-        numeroReservacion: "SOL-2025005",
-        titulo: "Junta Directiva Mensual",
-        fechaInicio: "2025-06-08T10:00:00",
-        fechaFin: "2025-06-08T12:00:00",
-        solicitante: {
-          nombre: "Dr. Fernando Aguirre",
-          email: "fernando.aguirre@cicese.mx",
-          departamento: "Dirección General"
-        },
-        ubicacion: {
-          sala: "Sala de Juntas Ejecutiva",
-          edificio: "Edificio Administrativo",
-          piso: "Piso 3",
-          capacidadMaxima: 12
-        },
-        participantes: 10,
-        estado: "completada",
-        fechaCreacion: "2025-05-25T09:00:00",
-        enlaceVideoconferencia: "https://teams.microsoft.com/l/meetup-join/confidencial",
-        descripcion: "Junta mensual de la dirección para revisar avances institucionales y tomar decisiones estratégicas.",
-        equipoRequerido: ["Sistema de videoconferencia", "Pantalla interactiva"],
-        serviciosExtra: ["Catering ejecutivo", "Servicio de café"]
-      }
-    ];
-
-    // Simular carga asíncrona
-    setTimeout(() => {
-      setSolicitudes(solicitudesSimuladas);
-      setFilteredSolicitudes(solicitudesSimuladas);
-      setLoading(false);
-    }, 1000);
-  }, []);
+    if (user) {
+      fetchSolicitudes();
+    } else {
+      setSolicitudes([]);
+      setFilteredSolicitudes([]);
+    }
+  }, [user]);
 
   // Filtrar solicitudes
   useEffect(() => {
@@ -265,6 +208,23 @@ export default function SolicitudesPage() {
       return '--:--';
     }
   };
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-600 dark:text-red-400 text-xl mb-4">⚠️</div>
+          <p className="text-gray-600 dark:text-gray-400">{error}</p>
+          <button
+            onClick={fetchSolicitudes}
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+          >
+            Reintentar
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -402,5 +362,13 @@ export default function SolicitudesPage() {
         reservacion={selectedSolicitud}
       />
     </div>
+  );
+}
+
+export default function SolicitudesPage() {
+  return (
+    <AuthGuard>
+      <SolicitudesContent />
+    </AuthGuard>
   );
 }
