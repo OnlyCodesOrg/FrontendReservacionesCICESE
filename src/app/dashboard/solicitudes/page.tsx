@@ -82,8 +82,8 @@ function SolicitudesContent() {
         id: reservacion.idReservacion.toString(),
         numeroReservacion: reservacion.numeroSolicitud,
         titulo: reservacion.nombreEvento,
-        fechaInicio: `${reservacion.fechaEvento}T${reservacion.horaInicio}`,
-        fechaFin: `${reservacion.fechaEvento}T${reservacion.horaFin}`,
+        fechaInicio: `${reservacion.fechaEvento.split('T')[0]}T${reservacion.horaInicio}`,
+        fechaFin: `${reservacion.fechaEvento.split('T')[0]}T${reservacion.horaFin}`,
         solicitante: {
           id: userId,
           nombre: user?.nombre || '',
@@ -92,16 +92,16 @@ function SolicitudesContent() {
         },
         ubicacion: {
           sala: reservacion.salaEvento,
-          edificio: 'CICESE',  // Este dato viene del backend?
-          piso: 'No especificado', // Este dato viene del backend?
-          capacidadMaxima: 0 // Este dato viene del backend?
+          edificio: 'CICESE',
+          piso: 'No especificado',
+          capacidadMaxima: 0
         },
-        participantes: 0, // Este dato viene del backend?
+        participantes: reservacion.numeroAsistentesEstimado || 0,
         estado: reservacion.estadoActual.toLowerCase(),
-        fechaCreacion: new Date().toISOString(), // Este dato viene del backend?
-        descripcion: '',  // Este dato viene del backend?
-        equipoRequerido: [], // Este dato viene del backend?
-        serviciosExtra: []  // Este dato viene del backend?
+        fechaCreacion: reservacion.fechaCreacionSolicitud || reservacion.fechaEvento,
+        descripcion: reservacion.observaciones || '',
+        equipoRequerido: [],
+        serviciosExtra: []
       }));
 
       setSolicitudes(solicitudesFormateadas);
@@ -249,7 +249,7 @@ function SolicitudesContent() {
         </div>
         <div className="mt-4 sm:mt-0">
           <button
-            onClick={() => router.push('/dashboard/solicitudes/nueva')}
+            onClick={() => router.push('/dashboard/salas')}
             className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
           >
             Nueva Solicitud

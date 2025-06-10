@@ -28,11 +28,11 @@ type User = {
 };
 
 const navigation = [
-  { name: "Dashboard", href: "/", icon: HomeIcon },
+  { name: "Inicio", href: "/", icon: HomeIcon },
   { name: "Calendario", href: "/dashboard/calendario", icon: CalendarIcon },
   { name: "Solicitudes", href: "/dashboard/solicitudes", icon: DocumentTextIcon },
-  { name: "Conferencias", href: "/dashboard/conferencia", icon: ClipboardDocumentListIcon },
-  { name: "Salas", href: "/dashboard/salas-tecnico", icon: BuildingOfficeIcon },
+  // { name: "Conferencias", href: "/dashboard/conferencia", icon: ClipboardDocumentListIcon },
+  { name: "Salas", href: "/dashboard/salas", icon: BuildingOfficeIcon },
   // { name: "Usuarios", href: "/dashboard/usuarios", icon: UserGroupIcon },
   // { name: "Configuración", href: "/dashboard/configuracion", icon: CogIcon },
 ];
