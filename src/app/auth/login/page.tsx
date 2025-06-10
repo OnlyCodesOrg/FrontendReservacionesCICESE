@@ -1,8 +1,32 @@
-// app/(public)/login/page.tsx   ← Ajusta la ruta según tu estructura de carpetas
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Cookies from 'js-cookie';
+
+// Tipos para la respuesta de la API
+interface AuthResponse {
+  success: boolean;
+  message: string;
+  data: {
+    access_token: string;
+    refresh_token: string;
+    user: {
+      id: number;
+      email: string;
+      nombre: string;
+      apellidos: string;
+      rol: {
+        id: number;
+        nombre: string;
+      };
+      departamento?: {
+        id: number;
+        nombre: string;
+      } | null;
+    };
+  };
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -22,7 +46,6 @@ export default function LoginPage() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
   const handleSubmit = async (e: React.FormEvent) => {
-
     e.preventDefault();
     setErrorMessage(null);
 
@@ -43,25 +66,37 @@ export default function LoginPage() {
           email: email.trim(),
           contraseña: password,
         }),
+        credentials: 'include', // Importante para cookies
       });
 
-      if (!res.ok) {
-        // Si el backend devuelve 401 o 400, extraigo el mensaje
-        const data = await res.json();
-        // data.message contendrá "Correo no encontrado." o "La contraseña es incorrecta." según tu AuthService
+      const data: AuthResponse = await res.json();
+
+      if (!res.ok || !data.success) {
         setErrorMessage(data.message || "Ocurrió un error inesperado.");
         setLoading(false);
         return;
       }
 
-      const { access_token } = await res.json();
+      // Guardar tokens en cookies
+      Cookies.set('access_token', data.data.access_token, { expires: 1 }); // Expira en 1 día
+      Cookies.set('refresh_token', data.data.refresh_token, { expires: 7 }); // Expira en 7 días
 
-      // Guardar token (aquí localStorage, considera cookies httpOnly si quieres más seguridad)
-      localStorage.setItem("access_token", access_token);
+      // Guardar información del usuario
+      Cookies.set('user', JSON.stringify({
+        id: data.data.user.id,
+        email: data.data.user.email,
+        nombre: data.data.user.nombre,
+        apellidos: data.data.user.apellidos,
+        rol: data.data.user.rol,
+        departamento: data.data.user.departamento,
+      }));
 
-      // Decidir a dónde redirigir; por simplicidad, a /dashboard
-      // Si deseas redirigir según rol, debes decodificar el JWT y leer idRol
-      router.push("/");
+      // Redirigir según el rol del usuario
+      if (data.data.user.rol.nombre.toLowerCase().includes('admin')) {
+        router.push('/admin/dashboard');
+      } else {
+        router.push('/');
+      }
       
     } catch (error) {
       console.error("Error al hacer login:", error);
@@ -168,7 +203,7 @@ export default function LoginPage() {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
-                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-.274.822-.64 1.607-1.09 2.336M15.54 15.54A9.956 9.956 0 0112 17c-4.477 0-8.268-2.943-9.542-7 .274-.822.64-1.607 1.09-2.336"
+                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-.274.822-.64-1.607-1.09 2.336M15.54 15.54A9.956 9.956 0 0112 17c-4.477 0-8.268-2.943-9.542-7 .274-.822.64-1.607 1.09-2.336"
                     />
                   </svg>
                 )}
