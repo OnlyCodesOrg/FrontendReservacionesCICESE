@@ -1,8 +1,10 @@
 import { BackendRoute } from "@/types/api/route"
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+
 export async function getSalas() {
     try {
-        const fetchData = await fetch(`http://localhost:3000/salas/consultar-disponibilidad`);
+        const fetchData = await fetch(`${API_URL}/salas/consultar-disponibilidad`);
         if (!fetchData.ok) throw new Error("Problemas con el fetch");
         const data = await fetchData.json();
         return data;
