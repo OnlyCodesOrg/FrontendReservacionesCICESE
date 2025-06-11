@@ -27,15 +27,38 @@ type User = {
   id_departamento: number;
 };
 
-const navigation = [
-  { name: "Inicio", href: "/", icon: HomeIcon },
-  { name: "Calendario", href: "/dashboard/calendario", icon: CalendarIcon },
-  { name: "Solicitudes", href: "/dashboard/solicitudes", icon: DocumentTextIcon },
-  // { name: "Conferencias", href: "/dashboard/conferencia", icon: ClipboardDocumentListIcon },
-  { name: "Salas", href: "/dashboard/salas", icon: BuildingOfficeIcon },
-  // { name: "Usuarios", href: "/dashboard/usuarios", icon: UserGroupIcon },
-  // { name: "Configuración", href: "/dashboard/configuracion", icon: CogIcon },
-];
+// Función para obtener la navegación basada en el rol del usuario
+const getNavigation = (userRole?: { id: number; nombre: string }) => {
+  const baseNavigation = [
+    { name: "Inicio", href: "/", icon: HomeIcon },
+    { name: "Calendario", href: "/dashboard/calendario", icon: CalendarIcon },
+  ];
+
+  // Determinar la ruta de solicitudes según el rol
+  const isTecnico = userRole?.nombre?.toLowerCase().includes('tecnico') || 
+                   userRole?.nombre?.toLowerCase().includes('técnico'); 
+
+  const solicitudesItem = {
+    name: "Solicitudes",
+    href: isTecnico ? "/dashboard/solicitudes-tecnico" : "/dashboard/solicitudes",
+    icon: DocumentTextIcon
+  };
+
+  const salasItem = {
+    name: "Salas",
+    href: isTecnico ? "/dashboard/salas-tecnico" : "/dashboard/salas",
+    icon: BuildingOfficeIcon
+  };
+
+  return [
+    ...baseNavigation,
+    solicitudesItem,
+    // { name: "Conferencias", href: "/dashboard/conferencia", icon: ClipboardDocumentListIcon },
+    salasItem,
+    // { name: "Usuarios", href: "/dashboard/usuarios", icon: UserGroupIcon },
+    // { name: "Configuración", href: "/dashboard/configuracion", icon: CogIcon },
+  ];
+};
 
 export default function Sidebar() {
   const router = useRouter();
@@ -44,6 +67,9 @@ export default function Sidebar() {
   const { isAuthenticated, user, loading, logout } = useAuth();
 
   const isLoginPage = pathname === "/auth/login";
+
+  // Obtener la navegación basada en el rol del usuario
+  const navigation = getNavigation(user?.rol);
 
   if (isLoginPage) {
     return null;
