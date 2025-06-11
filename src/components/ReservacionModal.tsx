@@ -30,7 +30,7 @@ interface ReservacionModalProps {
       capacidadMaxima: number;
     };
     participantes: number;
-    estado: 'pendiente' | 'aprobada';
+    estado: 'pendiente' | 'aprobada' | 'rechazada' | 'completada';
     fechaCreacion: string;
     enlaceVideoconferencia?: string;
     descripcion?: string;
