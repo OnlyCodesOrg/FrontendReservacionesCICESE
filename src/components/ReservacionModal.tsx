@@ -30,7 +30,7 @@ interface ReservacionModalProps {
       capacidadMaxima: number;
     };
     participantes: number;
-    estado: 'pendiente' | 'aprobada' | 'rechazada' | 'completada';
+    estado: 'pendiente' | 'aprobada';
     fechaCreacion: string;
     enlaceVideoconferencia?: string;
     descripcion?: string;
@@ -675,13 +675,16 @@ export default function ReservacionModal({ isOpen, onClose, reservacion }: Reser
                   Ver Detalles
                 </button>
                 
-                <button
-                  onClick={handleEditarReservacion}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                >
-                  <Edit className="h-4 w-4" />
-                  Editar Reservación
-                </button>
+                {/* Solo mostrar botón de editar si el estado es 'pendiente' */}
+                {reservacion.estado === 'pendiente' && (
+                  <button
+                    onClick={handleEditarReservacion}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                  >
+                    <Edit className="h-4 w-4" />
+                    Editar Reservación
+                  </button>
+                )}
               </>
             ) : (
               <>

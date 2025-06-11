@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Cookies from 'js-cookie';
 import { AuthGuard } from "@/components/AuthGuard";
 import { useAuth } from "@/context/AuthContext";
+import { crearReservacion, CrearReservacionRequest } from "@/app/api/reservaciones/reservacionesService";
 
 // Reutiliza las mismas interfaces
 interface Asistente {
@@ -43,6 +44,7 @@ interface FormData {
   equipoRequerido: EquipoRequerido;
   serviciosRequeridos: ServiciosRequeridos;
   asistentes: Asistente[];
+  idTecnicoAsignado: number;
 }
 
 interface SalaSeleccionada {
@@ -176,8 +178,8 @@ export default function ConfirmarSolicitudPage() {
         formData.asistentes.length > 0 ? `Asistentes adicionales: ${formData.asistentes.map(a => a.nombre).join(", ")}` : null
       ].filter(Boolean).join(". ");
 
-      // Preparar payload según la estructura requerida
-      const reservacionData = {
+      // Preparar payload según la estructura requerida con técnico asignado obligatorio
+      const reservacionData: CrearReservacionRequest = {
         numeroReservacion,
         idUsuario: userId,
         idSala: salaSeleccionada.id,
@@ -187,25 +189,18 @@ export default function ConfirmarSolicitudPage() {
         horaInicio: formData.horaInicio,
         horaFin: formData.horaFinalizacion,
         asistentes: parseInt(formData.numeroParticipantes.split("-")[0]) || 0,
-        observaciones: observaciones || "Sin observaciones adicionales"
+        observaciones: observaciones || "Sin observaciones adicionales",
+        idTecnicoResponsable: formData.idTecnicoAsignado || 1 // Fallback garantizado
       };
 
-      // Crear la reservación
-      const createReservacionResponse = await fetch(`${API_URL}/reservaciones/crear`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(reservacionData)
-      });
+      // Crear la reservación usando el servicio que asegura el idTecnicoResponsable
+      const resultado = await crearReservacion(reservacionData);
 
-      if (!createReservacionResponse.ok) {
-        const errorData = await createReservacionResponse.json();
-        throw new Error(errorData.message || 'Error al crear la reservación');
+      if (!resultado.success) {
+        throw new Error(resultado.message || 'Error al crear la reservación');
       }
 
-      const reservacionCreada = await createReservacionResponse.json();
+      const reservacionCreada = resultado.data;
 
       // Limpiar localStorage y mostrar mensaje de éxito
       localStorage.removeItem('solicitudReservacion');

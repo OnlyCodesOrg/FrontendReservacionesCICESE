@@ -70,7 +70,7 @@ export default function ConferenciaDetalle({ params }: { params: { id: string } 
   const [conferencia, setConferencia] = useState<Conferencia | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, fetchWithAuth, getUserId } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -88,35 +88,25 @@ export default function ConferenciaDetalle({ params }: { params: { id: string } 
         setLoading(true);
         setError(null);
         
-        // Obtener el token de las cookies
-        const token = Cookies.get('access_token');
-        if (!token) {
+        // Verificar que tengamos acceso a fetchWithAuth
+        if (!fetchWithAuth) {
           router.push('/auth/login');
           return;
         }
         
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/reservaciones/reservacion/${params.id}`, {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
+        
+        const response = await fetchWithAuth(`${process.env.NEXT_PUBLIC_API_URL}/reservaciones/reservacion/${params.id}`, {
           credentials: 'include',
         });
 
         if (!response.ok) {
+
           if (response.status === 404) {
             notFound();
           }
-          if (response.status === 401) {
-            toast.error('Sesión expirada. Por favor, inicia sesión nuevamente.');
-            router.push('/auth/login');
-            return;
-          }
-          throw new Error('No tienes acceso a esta reservación');
         }
 
         const data: APIResponse = await response.json();
-        
         // Transformar los datos al formato esperado por el componente
         const reservacion: Conferencia = {
           id: data.id.toString(),
@@ -147,7 +137,6 @@ export default function ConferenciaDetalle({ params }: { params: { id: string } 
 
         setConferencia(reservacion);
       } catch (error) {
-        console.error("Error al cargar la conferencia:", error);
         setError(error instanceof Error ? error.message : 'Error al cargar la conferencia');
         toast.error('Error al cargar los datos de la reservación');
       } finally {
@@ -246,7 +235,7 @@ export default function ConferenciaDetalle({ params }: { params: { id: string } 
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <Link 
-            href="/dashboard/solicitudes" 
+            href={user?.rol.nombre === 'Técnico' ? '/dashboard/solicitudes-tecnico' : '/dashboard/reservaciones'}
             className="inline-flex items-center mb-6 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
           >
             ← Volver a mis reservaciones

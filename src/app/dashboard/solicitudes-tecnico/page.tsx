@@ -8,6 +8,7 @@ import { es } from "date-fns/locale";
 import Cookies from "js-cookie";
 import { AuthGuard } from "@/components/AuthGuard";
 import { useAuth } from "@/context/AuthContext";
+import { Reservacion } from "@/types/reservacion";
 
 interface SolicitudPendiente {
     id: number;
@@ -38,7 +39,7 @@ interface SolicitudPendiente {
 
 function SolicitudesTecnicoContent() {
     const router = useRouter();
-    const { user, getUserId } = useAuth();
+    const { user, getUserId, fetchWithAuth } = useAuth();
     const [solicitudes, setSolicitudes] = useState<SolicitudPendiente[]>([]);
     const [filteredSolicitudes, setFilteredSolicitudes] = useState<SolicitudPendiente[]>([]);
     const [searchTerm, setSearchTerm] = useState("");
@@ -54,19 +55,14 @@ function SolicitudesTecnicoContent() {
             setError(null);
 
             const API_URL = process.env.NEXT_PUBLIC_API_URL;
-            const token = Cookies.get('access_token');
             const userId = getUserId();
 
-            if (!token || !userId) {
+            if (!userId) {
                 throw new Error('No hay sesión activa');
             }
 
-            const response = await fetch(`${API_URL}/reservaciones/solicitudes-pendientes/${userId}`, {
+            const response = await fetchWithAuth(`${API_URL}/reservaciones/solicitudes-pendientes/${userId}`, {
                 method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
             });
 
             if (!response.ok) {
@@ -171,33 +167,64 @@ function SolicitudesTecnicoContent() {
         setFilteredSolicitudes(filtered);
     }, [searchTerm, dateFilter, participantsFilter, statusFilter, solicitudes]);
 
-    const handleAprobarSolicitud = async (id: number) => { // TENGO QUE HACER ESTO
+    const handleAprobarSolicitud = async (id: number) => {
         try {
             const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-            const token = Cookies.get('access_token');
+            const solicitud = solicitudes.find(s => s.id === id);
+            
+            if (!solicitud) {
+                return;
+            }
 
-            const response = await fetch(`${API_URL}/reservaciones/procesar-aprobacion`, {
+            const userId = getUserId();
+            console.log('Aprobando solicitud:', {
+                id,
+                numeroReservacion: solicitud.numeroReservacion,
+                idTecnico: userId,
+                URL: `${API_URL}/reservaciones/procesar-aprobacion`
+            });
+
+            if (!userId) {
+                throw new Error('No se pudo obtener el ID del usuario');
+            }
+
+            const tecnicoId = solicitud.tecnicoResponsable?.id;
+            
+            if (!tecnicoId) {
+                throw new Error('No se pudo obtener el ID del técnico responsable');
+            }
+
+            console.log('IDs identificados:', {
+                userId: userId,
+                tecnicoId: tecnicoId
+            });
+
+            const requestBody = {
+                numeroReservacion: solicitud.numeroReservacion,
+                accion: 'aprobar',
+                motivo: 'Aprobada por técnico',
+                idTecnicoAprobador: tecnicoId  // Usar ID del técnico, no del usuario
+            };
+
+
+            const response = await fetchWithAuth(`${API_URL}/reservaciones/procesar-aprobacion`, {
                 method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    idReservacion: id,
-                    accion: 'aprobar',
-                    motivo: 'Aprobada por técnico'
-                })
+                body: JSON.stringify(requestBody)
             });
 
             if (response.ok) {
-                // Recargar las solicitudes
+                const result = await response.json();
+                console.log('Solicitud aprobada exitosamente:', result);
+                
+                
+                // Recargar las solicitudes para mostrar el cambio de estado
                 await fetchSolicitudesPendientes();
             } else {
-                throw new Error('Error al aprobar la solicitud');
+                const errorData = await response.text();
+                throw new Error(`Error del servidor (${response.status}): ${errorData}`);
             }
         } catch (error) {
-            console.error('Error:', error);
-            alert('Error al aprobar la solicitud');
+            console.error('Error completo:', error);
         }
     };
 
@@ -400,8 +427,6 @@ function SolicitudesTecnicoContent() {
                             <option value="all">Todos los estados</option>
                             <option value="pendiente">Pendiente</option>
                             <option value="aprobada">Aprobada</option>
-                            <option value="rechazada">Rechazada</option>
-                            <option value="completada">Completada</option>
                         </select>
                     </div>
                 </div>

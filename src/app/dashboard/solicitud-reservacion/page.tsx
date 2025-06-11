@@ -49,6 +49,7 @@ interface FormData {
   equipoRequerido: EquipoRequerido;
   serviciosRequeridos: ServiciosRequeridos;
   asistentes: Asistente[];
+  idTecnicoAsignado: number;
 }
 
 interface FormErrors {
@@ -101,6 +102,7 @@ function SolicitudReservacionForm() {
       wifi: false,
     },
     asistentes: [{ nombre: "", correo: "" }],
+    idTecnicoAsignado: 1,
   });
   const [formErrors, setFormErrors] = useState<FormErrors>({});
 
@@ -115,6 +117,7 @@ function SolicitudReservacionForm() {
         nombreCompleto,
         correo: user.email,
         departamento: departamentoId,
+        idTecnicoAsignado: 1,
       }));
     }
   }, [user]);

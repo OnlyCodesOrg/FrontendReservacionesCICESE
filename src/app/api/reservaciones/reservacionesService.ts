@@ -67,6 +67,20 @@ interface ValidarDisponibilidadResponse {
   };
 }
 
+export interface CrearReservacionRequest {
+  numeroReservacion: string;
+  idUsuario: number;
+  idSala: number;
+  nombreEvento: string;
+  tipoEvento: string;
+  fechaEvento: string;
+  horaInicio: string;
+  horaFin: string;
+  asistentes: number;
+  observaciones?: string;
+  idTecnicoResponsable: number; // Campo obligatorio para asignar técnico
+}
+
 interface ModificarReservacionRequest {
   numeroReservacion: string;
   idSala?: number;
@@ -181,6 +195,42 @@ export const validarDisponibilidadSala = async (
     return data;
   } catch (error) {
     console.error('Error al validar disponibilidad:', error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Error desconocido',
+    };
+  }
+};
+
+/**
+ * Crea una nueva reservación con técnico asignado automáticamente
+ */
+export const crearReservacion = async (datos: CrearReservacionRequest): Promise<ApiResponse> => {
+  try {
+    // Asegurar que SIEMPRE se envíe el idTecnicoResponsable
+    const payload = {
+      ...datos,
+      idTecnicoResponsable: datos.idTecnicoResponsable || 1 // Fallback a técnico ID 1
+    };
+
+    const response = await fetch(`${API_URL}/reservaciones/crear`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return {
+      success: true,
+      message: data.message || 'Reservación creada exitosamente',
+      data: data.data,
+    };
+  } catch (error) {
+    console.error('Error al crear reservación:', error);
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Error desconocido',

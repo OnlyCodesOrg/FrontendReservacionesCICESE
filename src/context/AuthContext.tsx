@@ -26,6 +26,7 @@ interface AuthContextType {
   login: (userData: User, accessToken: string, refreshToken: string) => void;
   logout: () => void;
   getUserId: () => number | null;
+  fetchWithAuth: (url: string, options?: RequestInit) => Promise<Response>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -133,6 +134,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return authState.user.id;
   };
 
+  const fetchWithAuth = async (url: string, options: RequestInit = {}): Promise<Response> => {
+    const token = Cookies.get('access_token');
+
+    if (!token) {
+      throw new Error('No hay token de acceso');
+    }
+
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+      ...options.headers,
+    };
+
+    const response = await fetch(url, {
+      ...options,
+      headers,
+    });
+
+    // Si recibimos 401, intentar refrescar el token
+    if (response.status === 401) {
+      console.log('Token expirado, intentando refrescar...');
+      // Lógica de refresh simplificada por ahora
+      logout();
+    }
+
+    return response;
+  };
+
   // No renderizar contenido protegido si no está autenticado (excepto en rutas públicas)
   if (!authState.loading && !authState.isAuthenticated && !isPublicRoute) {
     return null;
@@ -154,6 +183,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         login,
         logout,
         getUserId,
+        fetchWithAuth,
       }}
     >
       {children}

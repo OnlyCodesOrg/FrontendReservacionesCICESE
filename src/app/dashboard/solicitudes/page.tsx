@@ -29,7 +29,7 @@ interface Solicitud {
     capacidadMaxima: number;
   };
   participantes: number;
-  estado: 'pendiente' | 'aprobada' | 'rechazada' | 'completada';
+  estado: 'pendiente' | 'aprobada';
   fechaCreacion: string;
   enlaceVideoconferencia?: string;
   descripcion?: string;
@@ -161,10 +161,6 @@ function SolicitudesContent() {
         return 'bg-green-100 text-green-800 border-green-200';
       case 'pendiente':
         return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'rechazada':
-        return 'bg-red-100 text-red-800 border-red-200';
-      case 'completada':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200';
     }
@@ -176,10 +172,6 @@ function SolicitudesContent() {
         return 'Aprobada';
       case 'pendiente':
         return 'Pendiente';
-      case 'rechazada':
-        return 'Rechazada';
-      case 'completada':
-        return 'Completada';
       default:
         return estado;
     }
@@ -281,8 +273,6 @@ function SolicitudesContent() {
             <option value="all">Todos los estados</option>
             <option value="pendiente">Pendiente</option>
             <option value="aprobada">Aprobada</option>
-            <option value="rechazada">Rechazada</option>
-            <option value="completada">Completada</option>
           </select>
         </div>
       </div>
