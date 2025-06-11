@@ -212,7 +212,7 @@ export default function ConferenciaDetalle({ params }: { params: { id: string } 
           <div className="text-red-500 text-xl mb-4">⚠️</div>
           <p className="text-gray-600 dark:text-gray-400">{error}</p>
           <Link 
-            href="/dashboard/reservaciones"
+            href="/dashboard/solicitudes"
             className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors inline-block"
           >
             Volver a mis reservaciones
@@ -235,7 +235,7 @@ export default function ConferenciaDetalle({ params }: { params: { id: string } 
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <Link 
-            href={user?.rol.nombre === 'Técnico' ? '/dashboard/solicitudes-tecnico' : '/dashboard/reservaciones'}
+            href={user?.rol.nombre === 'Técnico' ? '/dashboard/solicitudes-tecnico' : '/dashboard/solicitudes'}
             className="inline-flex items-center mb-6 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
           >
             ← Volver a mis reservaciones
