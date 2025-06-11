@@ -30,7 +30,7 @@ interface ReservacionModalProps {
       capacidadMaxima: number;
     };
     participantes: number;
-    estado: 'pendiente' | 'aprobada';
+    estado: 'Pendiente' | 'Aprobada' | 'Rechazada' | 'Cancelada';
     fechaCreacion: string;
     enlaceVideoconferencia?: string;
     descripcion?: string;
@@ -254,13 +254,13 @@ export default function ReservacionModal({ isOpen, onClose, reservacion }: Reser
 
   const getEstadoColor = (estado: string) => {
     switch (estado) {
-      case 'aprobada':
+      case 'Aprobada':
         return 'bg-green-100 text-green-800 border-green-200';
-      case 'pendiente':
+      case 'Pendiente':
         return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'rechazada':
+      case 'Rechazada':
         return 'bg-red-100 text-red-800 border-red-200';
-      case 'completada':
+      case 'Cancelada':
         return 'bg-blue-100 text-blue-800 border-blue-200';
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200';
@@ -269,14 +269,14 @@ export default function ReservacionModal({ isOpen, onClose, reservacion }: Reser
 
   const getEstadoTexto = (estado: string) => {
     switch (estado) {
-      case 'aprobada':
+      case 'Aprobada':
         return 'Aprobada';
-      case 'pendiente':
+      case 'Pendiente':
         return 'Pendiente';
-      case 'rechazada':
+      case 'Rechazada':
         return 'Rechazada';
-      case 'completada':
-        return 'Completada';
+      case 'Cancelada':
+        return 'Cancelada';
       default:
         return estado;
     }
@@ -676,7 +676,7 @@ export default function ReservacionModal({ isOpen, onClose, reservacion }: Reser
                 </button>
                 
                 {/* Solo mostrar botón de editar si el estado es 'pendiente' */}
-                {reservacion.estado === 'pendiente' && (
+                {reservacion.estado === 'Pendiente' && (
                   <button
                     onClick={handleEditarReservacion}
                     className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
