@@ -61,11 +61,8 @@ export default function CalendarioPage() {
       setLoading(true);
       setError(null);
 
-      // Definir rango de fechas amplio para obtener todas las reservaciones
       const fechaInicio = "2024-01-01";
       const fechaFin = "2030-12-31";
-      
-      console.log('🔗 Obteniendo reservaciones desde Azure...');
       
       const response = await fetch(
         `${API_BASE_URL}/reservaciones/listar?fechaInicio=${fechaInicio}&fechaFin=${fechaFin}`,
@@ -88,21 +85,15 @@ export default function CalendarioPage() {
       }
 
       const data: ApiResponse = await response.json();
-      console.log('✅ Datos recibidos:', data);
-      
 
       if (!data.error && data.data) {
         const conferenciasTransformadas = transformarReservaciones(data.data);
         setConferencias(conferenciasTransformadas);
-        console.log(`🎉 ${conferenciasTransformadas.length} reservaciones cargadas exitosamente`);
       } else {
         throw new Error(data.mensaje || 'Error al obtener las reservaciones');
       }
     } catch (err) {
-      console.error('❌ Error al obtener reservaciones:', err);
       setError(err instanceof Error ? err.message : 'Error desconocido');
-      
-      // Usar datos simulados como fallback en caso de error
       usarDatosSimulados();
     } finally {
       setLoading(false);
@@ -111,25 +102,17 @@ export default function CalendarioPage() {
 
   const transformarReservaciones = (reservaciones: ApiReservacion[]): Conferencia[] => {
     return reservaciones.map((reservacion) => {
-      // Combinar fecha del evento con horas de inicio y fin
-      const fechaEvento = reservacion.fechaEvento.split('T')[0]; // Obtener solo la fecha (YYYY-MM-DD)
-      
-      // Extraer solo la hora de los timestamps de horaInicio y horaFin
-      const horaInicio = new Date(reservacion.horaInicio).toTimeString().slice(0, 8); // HH:MM:SS
-      const horaFin = new Date(reservacion.horaFin).toTimeString().slice(0, 8); // HH:MM:SS
+      const fechaEvento = reservacion.fechaEvento.split('T')[0];
+      const horaInicio = new Date(reservacion.horaInicio).toTimeString().slice(0, 8);
+      const horaFin = new Date(reservacion.horaFin).toTimeString().slice(0, 8);
       
       const fechaInicio = `${fechaEvento}T${horaInicio}`;
       const fechaFinCompleta = `${fechaEvento}T${horaFin}`;
 
-      // Determinar color basado en el estado
       const color = getColorByEstado(reservacion.estadoSolicitud);
-
-      // Extraer equipo requerido y servicios de observaciones
       const { equipoRequerido, serviciosExtra, descripcionLimpia } = extraerDetallesDeObservaciones(
         reservacion.observaciones
       );
-
-      // Determinar capacidad de la sala (valor por defecto basado en el nombre)
       const capacidadMaxima = estimarCapacidadSala(reservacion.sala.nombreSala);
 
       const conferencia: Conferencia = {
@@ -144,7 +127,7 @@ export default function CalendarioPage() {
         solicitante: {
           nombre: `${reservacion.usuario.nombre} ${reservacion.usuario.apellidos}`,
           email: reservacion.usuario.email,
-          departamento: 'No especificado' // Este dato no viene en la API
+          departamento: 'No especificado'
         },
         ubicacion: {
           sala: reservacion.sala.nombreSala,
@@ -153,7 +136,7 @@ export default function CalendarioPage() {
           capacidadMaxima
         },
         participantes: reservacion.numeroAsistentesEstimado,
-        estado: reservacion.estadoSolicitud.toLowerCase(),
+        estado: mapearEstado(reservacion.estadoSolicitud), // ✅ Usar función de mapeo
         fechaCreacion: reservacion.fechaCreacionSolicitud,
         descripcion: descripcionLimpia || `${reservacion.tipoEvento} - ${reservacion.nombreEvento}`,
         equipoRequerido,
@@ -163,6 +146,27 @@ export default function CalendarioPage() {
 
       return conferencia;
     });
+  };
+
+  // ✅ Función para mapear estados de la API a los tipos permitidos
+  const mapearEstado = (estadoAPI: string): 'pendiente' | 'aprobada' | 'rechazada' | 'completada' => {
+    const estadoLower = estadoAPI.toLowerCase();
+    switch (estadoLower) {
+      case 'aprobada':
+        return 'aprobada';
+      case 'pendiente':
+        return 'pendiente';
+      case 'rechazada':
+      case 'rechazado':
+        return 'rechazada';
+      case 'completada':
+      case 'completado':
+      case 'finalizada':
+      case 'finalizado':
+        return 'completada';
+      default:
+        return 'pendiente'; // Valor por defecto
+    }
   };
 
   const getColorByEstado = (estado: string): string => {
@@ -188,7 +192,6 @@ export default function CalendarioPage() {
     let serviciosExtra: string[] = [];
     let descripcionLimpia = observaciones;
 
-    // Extraer equipo requerido
     const equipoMatch = observaciones.match(/Equipo requerido:\s*([^.]*)/i);
     if (equipoMatch) {
       equipoRequerido = equipoMatch[1]
@@ -198,7 +201,6 @@ export default function CalendarioPage() {
       descripcionLimpia = descripcionLimpia.replace(/Equipo requerido:\s*[^.]*/i, '').trim();
     }
 
-    // Extraer servicios
     const serviciosMatch = observaciones.match(/Servicios requeridos:\s*([^.]*)/i);
     if (serviciosMatch) {
       serviciosExtra = serviciosMatch[1]
@@ -208,7 +210,6 @@ export default function CalendarioPage() {
       descripcionLimpia = descripcionLimpia.replace(/Servicios requeridos:\s*[^.]*/i, '').trim();
     }
 
-    // Limpiar texto adicional
     descripcionLimpia = descripcionLimpia
       .replace(/Asistentes adicionales:\s*[^.]*/i, '')
       .replace(/\.\s*\./g, '.')
@@ -235,35 +236,33 @@ export default function CalendarioPage() {
     if (nombre.includes('conferencia')) return 50;
     if (nombre.includes('junta')) return 10;
     if (nombre.includes('multimedia')) return 30;
-    return 25; // Valor por defecto
+    return 25;
   };
 
   const usarDatosSimulados = () => {
-    console.log('🔄 Usando datos simulados como fallback...');
-    
     const conferenciasSimuladas: Conferencia[] = [
       {
         id: "sim-1",
         numeroReservacion: "SIM-001",
-        titulo: "Conferencia de Ejemplo (Datos Simulados)",
+        titulo: "Conferencia de Ejemplo",
         fechaInicio: "2025-06-15T10:00:00",
         fechaFin: "2025-06-15T12:00:00",
         color: "bg-orange-500",
         salaId: "sim-sala1",
-        nombreSala: "Sala de Conferencias Simulada",
+        nombreSala: "Sala de Conferencias",
         solicitante: {
           nombre: "Usuario de Prueba",
           email: "prueba@cicese.mx",
           departamento: "Sistemas"
         },
         ubicacion: {
-          sala: "Sala de Conferencias Simulada",
+          sala: "Sala de Conferencias",
           edificio: "Edificio Principal",
           piso: "Piso 1",
           capacidadMaxima: 25
         },
         participantes: 15,
-        estado: "pendiente",
+        estado: "pendiente", // ✅ Valor literal válido
         fechaCreacion: "2025-06-01T09:00:00",
         descripcion: "Datos simulados - API no disponible",
         equipoRequerido: ["Proyector", "Audio"],
@@ -274,7 +273,6 @@ export default function CalendarioPage() {
     setConferencias(conferenciasSimuladas);
   };
 
-  // Función para recargar datos
   const recargarDatos = () => {
     obtenerReservaciones();
   };
@@ -285,10 +283,7 @@ export default function CalendarioPage() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-900 mx-auto"></div>
           <p className="mt-4 text-gray-600 dark:text-gray-400">
-            Cargando reservaciones desde Azure...
-          </p>
-          <p className="mt-2 text-sm text-gray-500">
-            Obteniendo datos del calendario
+            Cargando reservaciones...
           </p>
         </div>
       </div>
@@ -311,7 +306,7 @@ export default function CalendarioPage() {
               onClick={recargarDatos}
               className="w-full px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
             >
-              🔄 Reintentar
+              Reintentar
             </button>
           </div>
         </div>
@@ -321,34 +316,6 @@ export default function CalendarioPage() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950">
-      {/* Header con información de estado */}
-      <div className="p-4 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-              Calendario de Reservaciones
-            </h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              {conferencias.length} reservacion{conferencias.length !== 1 ? 'es' : ''} encontrada{conferencias.length !== 1 ? 's' : ''}
-            </p>
-          </div>
-          <div className="flex items-center space-x-4">
-            <div className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
-              <span className="mr-1">☁️</span>
-              Conectado a Azure
-            </div>
-            <button 
-              onClick={recargarDatos}
-              className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-              title="Recargar datos"
-            >
-              🔄 Actualizar
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Componente del calendario */}
       <Calendar conferencias={conferencias} />
     </div>
   );
